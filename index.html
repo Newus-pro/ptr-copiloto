@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTR Copiloto — Assistente Inteligente de Justificativas SAP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;overflow:hidden;height:100vh;}
+.dark{--bg:#0b0b10;--bg2:#13131a;--bg3:#1c1c27;--bd:#252535;--bd2:#2d2d42;--tx:#f0f0f8;--tx2:#9090b0;--tx3:#55556a;--card:#16161f;--card2:#1e1e2a;}
+.light{--bg:#f0f2f8;--bg2:#e8eaf4;--bg3:#dde0f0;--bd:#c8cce0;--bd2:#b8bdd8;--tx:#12121e;--tx2:#44445a;--tx3:#888898;--card:#ffffff;--card2:#f4f5fb;}
+body{background:var(--bg);color:var(--tx);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:99px;}
+#app{display:flex;height:100vh;overflow:hidden;}
+#sidebar{width:252px;min-width:252px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:50;transition:transform .3s ease;}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#topbar{height:54px;min-height:54px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 18px;gap:10px;}
+#views{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+#rpanel{width:292px;min-width:292px;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;}
+.view{display:none;flex-direction:column;height:100%;overflow:hidden;}
+.view.active{display:flex;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes shimmer{from{background-position:-400px 0;}to{background-position:400px 0;}}
+@keyframes typingPulse{0%,80%,100%{opacity:.25;transform:scale(1);}40%{opacity:1;transform:scale(1.3);}}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes modalIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+.fade-up{animation:fadeUp .35s ease both;}
+.shimmer-bg{background:linear-gradient(90deg,var(--bg3) 25%,var(--bd2) 50%,var(--bg3) 75%);background-size:400px 100%;animation:shimmer 1.4s infinite;border-radius:8px;min-height:60px;}
+.typing-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#6366f1;animation:typingPulse 1.2s infinite;}
+.typing-dot:nth-child(2){animation-delay:.2s;}.typing-dot:nth-child(3){animation-delay:.4s;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-weight:600;font-size:.84rem;cursor:pointer;border:none;transition:all .2s ease;white-space:nowrap;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+.btn-primary:hover{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 4px 18px rgba(99,102,241,.4);}
+.btn-ghost{background:transparent;color:var(--tx2);border:1px solid var(--bd2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--tx);}
+.btn-green{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;}
+.btn-green:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 4px 18px rgba(34,197,94,.35);}
+.btn-sm{padding:6px 12px;font-size:.78rem;border-radius:8px;}
+.btn-icon{padding:7px;border-radius:8px;background:transparent;border:1px solid var(--bd2);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;font-family:inherit;}
+.btn-icon:hover{background:var(--bg3);color:var(--tx);}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:.71rem;font-weight:600;}
+.badge-green{background:rgba(34,197,94,.15);color:#22c55e;}
+.badge-red{background:rgba(239,68,68,.13);color:#ef4444;}
+.badge-yellow{background:rgba(245,158,11,.13);color:#f59e0b;}
+.badge-blue{background:rgba(99,102,241,.15);color:#818cf8;}
+.badge-gray{background:var(--bg3);color:var(--tx2);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;font-size:.85rem;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .2s;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;}
+.nav-item:hover{background:var(--bg3);color:var(--tx);}
+.nav-item.active{background:linear-gradient(135deg,rgba(99,102,241,.18),rgba(139,92,246,.12));color:#a5b4fc;border-left:3px solid #6366f1;padding-left:9px;}
+.nav-section{font-size:.68rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;padding:6px 6px 4px;}
+.input-box{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:14px;transition:border-color .2s;}
+.input-box:focus-within{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+.input-box textarea{background:transparent;border:none;outline:none;color:var(--tx);width:100%;font-family:inherit;font-size:.875rem;line-height:1.6;}
+.input-box textarea::placeholder{color:var(--tx3);}
+.form-field{margin-bottom:12px;}
+.form-field label{display:block;font-size:.74rem;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em;}
+.form-field input,.form-field textarea,.form-field select{width:100%;padding:9px 13px;background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;color:var(--tx);font-family:inherit;font-size:.86rem;outline:none;transition:border-color .2s;}
+.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);}
+.form-field textarea{resize:vertical;min-height:72px;line-height:1.55;}
+.msg-ai{display:flex;gap:10px;padding:3px 0;margin-bottom:6px;}
+.msg-user{display:flex;gap:10px;padding:3px 0;margin-bottom:6px;flex-direction:row-reverse;}
+.msg-bubble{max-width:84%;padding:11px 15px;border-radius:13px;font-size:.875rem;line-height:1.68;}
+.bubble-ai{background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:13px 13px 13px 3px;}
+.bubble-user{background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border-radius:13px 13px 3px 13px;}
+.msg-bubble ul{margin-left:16px;margin-top:6px;display:flex;flex-direction:column;gap:3px;}
+.msg-av{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;font-weight:700;}
+.av-ai{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+.av-user{background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;}
+#score-arc{transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .5s;transform:rotate(-90deg);transform-origin:60px 60px;}
+.chk-item{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:8px;font-size:.81rem;}
+.chk-dot{width:17px;height:17px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.7rem;}
+.dot-ok{background:rgba(34,197,94,.18);color:#22c55e;}
+.dot-warn{background:rgba(245,158,11,.15);color:#f59e0b;}
+.dot-fail{background:rgba(239,68,68,.12);color:var(--tx3);}
+.just-card{border-radius:13px;border:1px solid var(--bd);overflow:hidden;}
+.just-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bd);}
+.just-body{padding:14px 16px;}
+.just-ta{width:100%;background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;padding:12px 14px;color:var(--tx);font-family:inherit;font-size:.875rem;line-height:1.65;resize:none;outline:none;transition:border-color .2s;min-height:90px;}
+.just-ta:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);}
+.char-counter{font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:99px;}
+.counter-ok{background:rgba(34,197,94,.12);color:#22c55e;}
+.counter-warn{background:rgba(245,158,11,.12);color:#f59e0b;}
+.counter-danger{background:rgba(239,68,68,.12);color:#ef4444;}
+.hist-item{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:13px;display:flex;gap:12px;cursor:pointer;transition:all .2s;}
+.hist-item:hover{border-color:var(--bd2);background:var(--card2);}
+.stat-card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:18px;}
+.tmpl-card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:16px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;gap:9px;}
+.tmpl-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(99,102,241,.18);border-color:#6366f1;}
+.prog-bar{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.miss-item{display:flex;flex-direction:column;gap:0;padding:0;border-radius:9px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);margin-bottom:6px;font-size:.81rem;cursor:pointer;transition:all .2s;user-select:none;overflow:hidden;}
+.miss-item-row{display:flex;align-items:center;gap:8px;padding:8px 12px;}
+.miss-item:hover:not(.miss-filled){background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.45);}
+.miss-item:hover:not(.miss-filled) .miss-arrow{opacity:1;transform:translateX(0);}
+.miss-arrow{opacity:0;transform:translateX(-4px);transition:all .2s;margin-left:auto;flex-shrink:0;font-size:.85rem;}
+.miss-filled{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.25);cursor:default;}
+.miss-expand{padding:0 12px 10px;animation:fadeIn .2s ease;}
+.miss-expand textarea{width:100%;background:var(--card);border:1.5px solid var(--bd);border-radius:8px;padding:8px 10px;color:var(--tx);font-size:.82rem;resize:none;outline:none;line-height:1.5;transition:border .2s;box-sizing:border-box;}
+.miss-expand textarea:focus{border-color:var(--ac);}
+.miss-expand-btns{display:flex;gap:6px;margin-top:6px;}
+.miss-confirm-btn{background:var(--ac);color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:.8rem;font-weight:600;cursor:pointer;}
+.miss-cancel-btn{background:var(--card);color:var(--tx3);border:1px solid var(--bd);border-radius:7px;padding:5px 12px;font-size:.8rem;cursor:pointer;}
+.miss-update-btn{width:100%;margin-top:10px;background:var(--ac);color:#fff;border:none;border-radius:9px;padding:9px;font-size:.84rem;font-weight:700;cursor:pointer;display:none;transition:opacity .2s;}
+.miss-update-btn:hover{opacity:.85;}
+.form-section-title{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bd);}
+.req{color:#ef4444;font-size:.75rem;}
+.form-card{background:var(--card);border-radius:13px;border:1px solid var(--bd);padding:16px 18px;margin-bottom:12px;}
+.form-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px;}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+.form-4col{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0 14px;}
+/* XLS Modal */
+#xls-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);display:none;overflow-y:auto;padding:20px;}
+#xls-modal.open{display:flex;align-items:flex-start;justify-content:center;}
+.modal-box{background:var(--bg2);border:1px solid var(--bd2);border-radius:18px;width:100%;max-width:780px;margin:auto;animation:modalIn .3s ease;}
+.modal-section{padding:18px 22px;border-bottom:1px solid var(--bd);}
+.modal-section:last-child{border-bottom:none;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bd2);}
+.section-title{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:12px;}
+.tipo-btn{padding:8px 20px;border-radius:9px;font-weight:700;font-size:.85rem;cursor:pointer;border:2px solid var(--bd2);background:transparent;color:var(--tx2);transition:all .2s;font-family:inherit;}
+.tipo-btn.active{border-color:#6366f1;background:rgba(99,102,241,.15);color:#a5b4fc;}
+.xls-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+.xls-preview{background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;padding:11px 13px;font-size:.8rem;line-height:1.6;color:var(--tx2);word-break:break-word;}
+/* Notifications */
+#notif-box{position:fixed;top:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.notif{padding:11px 16px;border-radius:11px;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:9px;animation:slideIn .3s ease both;pointer-events:all;min-width:240px;}
+.notif-ok{background:#16a34a;color:#fff;}
+.notif-err{background:#dc2626;color:#fff;}
+.notif-info{background:#4f46e5;color:#fff;}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:35;display:none;backdrop-filter:blur(2px);}
+@media(max-width:1200px){#rpanel{display:none;}#rpanel.open{display:flex;position:fixed;right:0;top:0;bottom:0;z-index:40;box-shadow:-6px 0 32px rgba(0,0,0,.3);}}
+@media(max-width:768px){#sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);}#sidebar.open{transform:translateX(0);}#mob-btn{display:flex!important;}.xls-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside id="sidebar">
+  <div style="padding:16px 14px 12px;border-bottom:1px solid var(--bd);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">⚡</div>
+      <div><div style="font-weight:800;font-size:.93rem;">PTR Copiloto</div><div style="font-size:.7rem;color:var(--tx3);margin-top:1px;">Assistente SAP Inteligente</div></div>
+    </div>
+  </div>
+  <div style="padding:10px 8px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;">
+    <div class="nav-section">Menu Principal</div>
+    <button class="nav-item active" data-view="new-ptr" onclick="go('new-ptr')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nova PTR</button>
+    <button class="nav-item" data-view="history" onclick="go('history')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Histórico</button>
+    <button class="nav-item" data-view="templates" onclick="go('templates')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Modelos</button>
+    <button class="nav-item" data-view="favorites" onclick="go('favorites')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Favoritos</button>
+    <button class="nav-item" data-view="dashboard" onclick="go('dashboard')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Dashboard</button>
+    <div class="nav-section" style="margin-top:10px;">Modelos Rápidos</div>
+    <button class="nav-item" onclick="useTemplate('emergencia')">🚨 Emergência</button>
+    <button class="nav-item" onclick="useTemplate('manutencao')">🔧 Manutenção</button>
+    <button class="nav-item" onclick="useTemplate('obras')">🏗️ Obras</button>
+    <button class="nav-item" onclick="useTemplate('capex')">📦 CAPEX</button>
+    <button class="nav-item" onclick="useTemplate('tecnologia')">💻 Tecnologia</button>
+    <button class="nav-item" onclick="useTemplate('contrato')">📋 Contrato</button>
+  </div>
+  <div style="padding:10px 8px;border-top:1px solid var(--bd);">
+    <button class="nav-item" onclick="toggleTheme()"><svg id="theme-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span id="theme-lbl">Modo Claro</span></button>
+    <div style="padding:8px 12px 4px;font-size:.72rem;color:var(--tx3);">FX3 Gestão · PTR Copiloto v2.0</div>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div id="main">
+  <div id="topbar">
+    <button class="btn-icon" id="mob-btn" style="display:none;" onclick="toggleSidebar()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg></button>
+    <div id="tb-title" style="font-weight:700;font-size:.92rem;flex:1;">Nova PTR</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="resetAll()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Novo</button>
+      <button class="btn-icon" onclick="togglePanel()" title="Painel de Análise"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
+    </div>
+  </div>
+  <div id="views">
+
+    <!-- ── NOVA PTR ── -->
+    <div id="view-new-ptr" class="view active">
+      <div id="ptr-scroll" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Mode Tabs -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;">
+            <button id="tab-txt" onclick="setMode('text')" style="padding:6px 14px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;transition:all .2s;">✏️ Texto Livre</button>
+            <button id="tab-frm" onclick="setMode('form')" style="padding:6px 14px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;background:transparent;color:var(--tx2);transition:all .2s;">📋 Formulário Guiado</button>
+          </div>
+          <span class="badge badge-blue">✨ IA Ativa</span>
+          <span class="badge badge-gray">Limite: 249 chars/justificativa</span>
+        </div>
+
+        <!-- TEXT INPUT -->
+        <div id="pane-text">
+          <div class="input-box">
+            <textarea id="ptr-in" rows="6" placeholder="Cole aqui sua justificativa de PTR...
+
+Exemplo: &quot;Preciso transferir recursos para manutenção do gerador da Subestação X&quot;
+
+A IA analisa, detecta o que falta, faz perguntas e gera automaticamente as duas justificativas (Origem e Destino) prontas para o SAP.  ✦ Ctrl+Enter para analisar"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);">
+              <span id="chr" style="font-size:.73rem;color:var(--tx3);">0 caracteres</span>
+              <div style="display:flex;gap:7px;">
+                <button class="btn btn-ghost btn-sm" onclick="clearIn()">Limpar</button>
+                <button class="btn btn-primary" onclick="analyze()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Analisar com IA</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM INPUT -->
+        <div id="pane-form" style="display:none;">
+
+          <!-- CABEÇALHO -->
+          <div class="form-card">
+            <div class="form-section-title">📋 Cabeçalho da PTR</div>
+            <div class="form-3col">
+              <div class="form-field"><label>Data do Envio <span class="req">*</span></label><input type="date" id="f-data"></div>
+              <div class="form-field"><label>Solicitante <span class="req">*</span></label><input type="text" id="f-sol" placeholder="Nome completo do solicitante"></div>
+              <div class="form-field"><label>Regional <span class="req">*</span></label><input type="text" id="f-reg" placeholder="Ex: Regional Cabreúva"></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-field"><label>Tipo de PTR <span class="req">*</span></label>
+                <select id="f-tipo" style="background:var(--card2);border:1.5px solid var(--bd);border-radius:9px;padding:8px 11px;color:var(--tx);font-size:.85rem;width:100%;outline:none;">
+                  <option value="MSO">MSO</option>
+                  <option value="CapexCO">CAPEX CO</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Ação</label><input type="text" value="Transferência" readonly style="opacity:.55;background:var(--card2);border:1.5px solid var(--bd);border-radius:9px;padding:8px 11px;color:var(--tx);font-size:.85rem;width:100%;"></div>
+            </div>
+          </div>
+
+          <!-- LINHA ORIGEM -->
+          <div class="form-card" style="border-left:4px solid #6366f1;">
+            <div class="form-section-title" style="color:#818cf8;">📤 Linha Origem</div>
+            <div class="form-3col">
+              <div class="form-field"><label>Empresa <span class="req">*</span></label><input type="text" id="fo-emp" placeholder="Ex: CTEP"></div>
+              <div class="form-field"><label>Área <span class="req">*</span></label><input type="text" id="fo-area" placeholder="Ex: CTEP"></div>
+              <div class="form-field"><label>Ano <span class="req">*</span></label><input type="number" id="fo-ano" value="2026" min="2020" max="2035"></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-field"><label>Centro de Custo <span class="req">*</span></label><input type="text" id="fo-cc" placeholder="Ex: 5141300000"></div>
+              <div class="form-field"><label>Centro Financeiro <span class="req">*</span></label><input type="text" id="fo-cf" placeholder="Ex: 5141300000"></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-field"><label>Conta Razão <span class="req">*</span></label><input type="text" id="fo-cr" placeholder="Ex: 6154112174"></div>
+              <div class="form-field"><label>Nº Item Financeiro <span class="req">*</span></label><input type="text" id="fo-nif" placeholder="Ex: 61512101"></div>
+            </div>
+            <div class="form-4col">
+              <div class="form-field"><label>Prog. Orçamentário</label><input type="text" id="fo-po" placeholder="Ex: 98888"></div>
+              <div class="form-field"><label>Fundos</label><input type="text" id="fo-fun" placeholder="Ex: 1000"></div>
+              <div class="form-field"><label>Mês Previsto <span class="req">*</span></label><input type="number" id="fo-mes" min="1" max="12" placeholder="1-12"></div>
+              <div class="form-field"><label>Valor R$ <span class="req">*</span></label><input type="number" id="fo-val" placeholder="Ex: 8660"></div>
+            </div>
+            <div class="form-field"><label>Item Orçamento <span class="req">*</span></label><input type="text" id="fo-item" placeholder="Ex: TCxB_ Contratação de Serviços para erradicação de vegetações..."></div>
+            <div class="form-field"><label>Identificação da Conta Origem <span class="req">*</span> <span style="color:var(--tx3);font-size:.7rem;font-weight:400;">— aparece no início da justificativa</span></label>
+              <input type="text" id="fo-id" placeholder="Ex: TExL - Despesas de Viagens - Transporte e Locomoção"></div>
+            <div class="form-field"><label>Motivo do saldo disponível <span class="req">*</span></label>
+              <textarea id="fo-mot" rows="2" style="background:var(--card2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:.85rem;width:100%;resize:none;outline:none;line-height:1.5;transition:border .2s;" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'" placeholder="Ex: Transferência de valor referente ao apoio prestado pela equipe TExP às atividades da TExL, em função da reestruturação da equipe."></textarea></div>
+          </div>
+
+          <!-- LINHA DESTINO -->
+          <div class="form-card" style="border-left:4px solid #22c55e;">
+            <div class="form-section-title" style="color:#4ade80;">📥 Linha Destino</div>
+            <div class="form-2col">
+              <div class="form-field"><label>Empresa <span class="req">*</span></label><input type="text" id="fd-emp" placeholder="Ex: CTEP"></div>
+              <div class="form-field"><label>Área <span class="req">*</span></label><input type="text" id="fd-area" placeholder="Ex: CTEP"></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-field"><label>Centro de Custo <span class="req">*</span></label><input type="text" id="fd-cc" placeholder="Ex: 5141300000"></div>
+              <div class="form-field"><label>Centro Financeiro <span class="req">*</span></label><input type="text" id="fd-cf" placeholder="Ex: 5141300000"></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-field"><label>Conta Razão <span class="req">*</span></label><input type="text" id="fd-cr" placeholder="Ex: 6154111101"></div>
+              <div class="form-field"><label>Nº Item Financeiro <span class="req">*</span></label><input type="text" id="fd-nif" placeholder="Ex: 61511102"></div>
+            </div>
+            <div class="form-4col">
+              <div class="form-field"><label>Prog. Orçamentário</label><input type="text" id="fd-po" placeholder="Ex: 98888"></div>
+              <div class="form-field"><label>Fundos</label><input type="text" id="fd-fun" placeholder="Ex: 1000"></div>
+              <div class="form-field"><label>Mês Necessidade <span class="req">*</span></label><input type="number" id="fd-mes" min="1" max="12" placeholder="1-12"></div>
+              <div class="form-field"><label>Valor R$ <span class="req">*</span></label><input type="number" id="fd-val" placeholder="Ex: 8660"></div>
+            </div>
+            <div class="form-field"><label>Item Orçamento <span class="req">*</span></label><input type="text" id="fd-item" placeholder="Ex: Item novo"></div>
+            <div class="form-field"><label>Justificativa do Destino <span class="req">*</span></label>
+              <textarea id="fd-just" rows="2" style="background:var(--card2);border:1.5px solid var(--bd);border-radius:9px;padding:9px 11px;color:var(--tx);font-size:.85rem;width:100%;resize:none;outline:none;line-height:1.5;transition:border .2s;" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'" placeholder="Ex: Transferência de recursos para recompor os custos decorrentes do apoio operacional prestado entre as equipes, garantindo a continuidade das atividades e o correto rateio das despesas."></textarea></div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;margin-bottom:6px;">
+            <button class="btn btn-ghost" onclick="clearForm()">Limpar</button>
+            <button class="btn btn-primary" onclick="genFromForm()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Gerar Justificativas</button>
+          </div>
+        </div>
+
+        <!-- CHAT MESSAGES -->
+        <div id="msgs" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+        <!-- RESULT — duas justificativas separadas -->
+        <div id="result-area" style="display:none;">
+
+          <!-- ORIGEM -->
+          <div class="just-card fade-up" style="background:var(--card);margin-bottom:12px;border-left:4px solid #6366f1;">
+            <div class="just-header" style="background:rgba(99,102,241,.06);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;">📤</div>
+                <div><div style="font-weight:700;font-size:.9rem;">Justificativa — Conta Origem</div><div style="font-size:.71rem;color:var(--tx2);">Cole no campo Origem do SAP</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="ctr-orig" class="char-counter counter-ok">0 / 249</span>
+                <button class="btn-icon btn-sm" onclick="copyOne('orig')" title="Copiar Origem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              </div>
+            </div>
+            <div class="just-body">
+              <textarea id="ta-orig" class="just-ta" rows="3" maxlength="249" oninput="updateCtr('orig')" placeholder="Justificativa da conta Origem será gerada aqui..."></textarea>
+              <div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;">
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('orig','better')">✨ Melhorar</button>
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('orig','technical')">🔬 Técnico</button>
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('orig','summarize')">✂️ Resumir</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- DESTINO -->
+          <div class="just-card fade-up" style="background:var(--card);margin-bottom:16px;border-left:4px solid #22c55e;" id="card-dest">
+            <div class="just-header" style="background:rgba(34,197,94,.06);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:30px;height:30px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;">📥</div>
+                <div><div style="font-weight:700;font-size:.9rem;">Justificativa — Conta Destino</div><div style="font-size:.71rem;color:var(--tx2);">Cole no campo Destino do SAP</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="ctr-dest" class="char-counter counter-ok">0 / 249</span>
+                <button class="btn-icon btn-sm" onclick="copyOne('dest')" title="Copiar Destino"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              </div>
+            </div>
+            <div class="just-body">
+              <textarea id="ta-dest" class="just-ta" rows="3" maxlength="249" oninput="updateCtr('dest')" placeholder="Justificativa da conta Destino será gerada aqui..."></textarea>
+              <div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;">
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('dest','better')">✨ Melhorar</button>
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('dest','technical')">🔬 Técnico</button>
+                <button class="btn btn-ghost btn-sm" onclick="improveOne('dest','summarize')">✂️ Resumir</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIONS -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 8px;">
+            <button class="btn btn-primary" onclick="copyBoth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar Ambas</button>
+            <button class="btn btn-green" onclick="openXLSModal()">📊 Exportar Template XLS</button>
+            <button class="btn btn-ghost btn-sm" onclick="saveHist()">💾 Salvar</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetAll()">🔄 Nova PTR</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── HISTÓRICO ── -->
+    <div id="view-history" class="view">
+      <div style="flex:1;overflow-y:auto;padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div><h2 style="font-weight:800;font-size:1.15rem;">Histórico de PTRs</h2><p style="font-size:.8rem;color:var(--tx2);margin-top:2px;">Todas as justificativas geradas</p></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="hsearch" type="text" oninput="renderHist()" placeholder="🔍 Pesquisar..." style="padding:7px 13px;background:var(--card);border:1px solid var(--bd);border-radius:9px;color:var(--tx);font-family:inherit;font-size:.83rem;outline:none;width:200px;">
+            <button class="btn btn-primary btn-sm" onclick="go('new-ptr')">+ Nova PTR</button>
+          </div>
+        </div>
+        <div id="hist-list" style="display:flex;flex-direction:column;gap:9px;"></div>
+      </div>
+    </div>
+
+    <!-- ── MODELOS ── -->
+    <div id="view-templates" class="view">
+      <div style="flex:1;overflow-y:auto;padding:18px;">
+        <div style="margin-bottom:16px;"><h2 style="font-weight:800;font-size:1.15rem;">Modelos de Justificativa</h2><p style="font-size:.8rem;color:var(--tx2);margin-top:2px;">Clique para usar como ponto de partida</p></div>
+        <div id="tmpl-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ── FAVORITOS ── -->
+    <div id="view-favorites" class="view">
+      <div style="flex:1;overflow-y:auto;padding:18px;">
+        <div style="margin-bottom:16px;"><h2 style="font-weight:800;font-size:1.15rem;">Favoritos</h2></div>
+        <div id="fav-list" style="display:flex;flex-direction:column;gap:9px;"></div>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div id="view-dashboard" class="view">
+      <div style="flex:1;overflow-y:auto;padding:18px;">
+        <div style="margin-bottom:16px;"><h2 style="font-weight:800;font-size:1.15rem;">Dashboard</h2><p style="font-size:.8rem;color:var(--tx2);margin-top:2px;">Métricas e indicadores</p></div>
+        <div id="dash-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="card"><div style="font-weight:700;margin-bottom:12px;font-size:.88rem;">PTRs por Categoria</div><div id="cat-chart"></div></div>
+          <div class="card"><div style="font-weight:700;margin-bottom:12px;font-size:.88rem;">Score Médio por Período</div><div id="trend-chart"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ RIGHT PANEL ═══════════ -->
+<aside id="rpanel">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--bd);font-weight:700;font-size:.88rem;">Painel de Análise</div>
+  <div style="padding:14px 16px;border-bottom:1px solid var(--bd);">
+    <div class="nav-section" style="margin-bottom:10px;">Score de Qualidade</div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <svg width="88" height="88" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg3)" stroke-width="10"/><circle id="score-arc" cx="60" cy="60" r="50" fill="none" stroke="#6366f1" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/></svg>
+        <div style="position:absolute;display:flex;flex-direction:column;align-items:center;"><span id="score-num" style="font-size:1.35rem;font-weight:800;line-height:1;color:#6366f1;">0</span><span style="font-size:.62rem;color:var(--tx3);">%</span></div>
+      </div>
+      <div style="flex:1;"><div id="score-lbl" style="font-weight:700;font-size:.88rem;margin-bottom:3px;">Aguardando</div><div id="score-sub" style="font-size:.74rem;color:var(--tx2);line-height:1.45;">Insira uma justificativa e clique em Analisar</div></div>
+    </div>
+    <div id="score-alert" style="display:none;margin-top:9px;padding:7px 11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.22);border-radius:8px;font-size:.77rem;color:#ef4444;">⚠️ Score abaixo de 90% — informações incompletas</div>
+  </div>
+  <div style="padding:14px 16px;border-bottom:1px solid var(--bd);">
+    <div class="nav-section" style="margin-bottom:8px;">Checklist</div>
+    <div id="chklist"></div>
+  </div>
+  <div id="miss-panel" style="padding:14px 16px;border-bottom:1px solid var(--bd);display:none;">
+    <div class="nav-section" style="margin-bottom:8px;">Itens Faltantes</div>
+    <div id="miss-list"></div>
+    <button id="miss-update-btn" class="miss-update-btn" onclick="applyMissing()">✅ Atualizar Justificativas</button>
+  </div>
+  <div style="padding:14px 16px;">
+    <div class="nav-section" style="margin-bottom:9px;">Resumo Rápido</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+      <div style="background:var(--bg3);border-radius:9px;padding:10px;text-align:center;"><div id="qs-total" style="font-size:1.3rem;font-weight:800;color:#6366f1;">0</div><div style="font-size:.7rem;color:var(--tx2);">PTRs criadas</div></div>
+      <div style="background:var(--bg3);border-radius:9px;padding:10px;text-align:center;"><div id="qs-avg" style="font-size:1.3rem;font-weight:800;color:#22c55e;">—</div><div style="font-size:.7rem;color:var(--tx2);">Score médio</div></div>
+      <div style="background:var(--bg3);border-radius:9px;padding:10px;text-align:center;"><div id="qs-time" style="font-size:1.3rem;font-weight:800;color:#f59e0b;">0h</div><div style="font-size:.7rem;color:var(--tx2);">Tempo salvo</div></div>
+      <div style="background:var(--bg3);border-radius:9px;padding:10px;text-align:center;"><div id="qs-avoid" style="font-size:1.3rem;font-weight:800;color:#22d3ee;">0</div><div style="font-size:.7rem;color:var(--tx2);">Reprov. evitadas</div></div>
+    </div>
+  </div>
+</aside>
+</div>
+
+<div id="overlay" onclick="closeAll()"></div>
+<div id="notif-box"></div>
+
+<!-- ═══════════ XLS MODAL ═══════════ -->
+<div id="xls-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📊</div>
+        <div><div style="font-weight:800;font-size:1rem;">Exportar Template PTR</div><div style="font-size:.75rem;color:var(--tx2);">Preencha os dados SAP e baixe o arquivo</div></div>
+      </div>
+      <button class="btn-icon" onclick="closeXLSModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <!-- Tipo -->
+    <div class="modal-section">
+      <div class="section-title">Tipo de PTR</div>
+      <div style="display:flex;gap:10px;">
+        <button id="tipo-mso" class="tipo-btn active" onclick="setTipo('MSO')">📋 MSO</button>
+        <button id="tipo-cap" class="tipo-btn" onclick="setTipo('CAPEX')">📦 CAPEX</button>
+      </div>
+    </div>
+
+    <!-- Cabeçalho -->
+    <div class="modal-section">
+      <div class="section-title">Informações do Cabeçalho</div>
+      <div class="xls-grid">
+        <div class="form-field"><label>Data do Envio</label><input type="date" id="xls-data"></div>
+        <div class="form-field"><label>Solicitante</label><input type="text" id="xls-sol" placeholder="Nome do solicitante"></div>
+        <div class="form-field"><label>Regional</label><input type="text" id="xls-reg" placeholder="Ex: Execução da Operação"></div>
+        <div class="form-field"><label>Ano</label><input type="number" id="xls-ano" value="2026" min="2020" max="2030"></div>
+      </div>
+    </div>
+
+    <!-- Linha Origem -->
+    <div class="modal-section">
+      <div class="section-title" style="color:#818cf8;">📤 Linha Origem</div>
+      <div class="xls-grid">
+        <div class="form-field"><label>Empresa</label><input type="text" id="xo-emp" placeholder="Ex: CTEP"></div>
+        <div class="form-field"><label>Centro de Custo</label><input type="text" id="xo-cc" placeholder="Ex: 5000000000"></div>
+        <div class="form-field"><label>Conta Razão</label><input type="text" id="xo-cr" placeholder="Ex: 6154112140"></div>
+        <div class="form-field"><label>Nº Item Financeiro</label><input type="text" id="xo-nif" placeholder="Ex: 98888"></div>
+        <div class="form-field"><label>Programa Orçamentário</label><input type="text" id="xo-po" placeholder="Ex: 98888"></div>
+        <div class="form-field"><label>Fundos</label><input type="text" id="xo-fun" placeholder="Ex: 1000"></div>
+        <div class="form-field"><label>Mês Previsto</label><input type="number" id="xo-mes" min="1" max="12" placeholder="1–12"></div>
+        <div class="form-field"><label>Valor (negativo)</label><input type="number" id="xo-val" placeholder="Ex: -150000"></div>
+      </div>
+      <div class="form-field"><label>Item Orçamento</label><input type="text" id="xo-item" placeholder="Ex: Hospedagem encontro de líderes"></div>
+      <div class="form-field" style="margin-bottom:0;"><label>Justificativa Origem <span style="color:#6366f1;">(pré-preenchida · max 249 chars)</span></label><div class="xls-preview" id="prev-orig"></div></div>
+    </div>
+
+    <!-- Linha Destino -->
+    <div class="modal-section">
+      <div class="section-title" style="color:#4ade80;">📥 Linha Destino</div>
+      <div class="xls-grid">
+        <div class="form-field"><label>Empresa</label><input type="text" id="xd-emp" placeholder="Ex: CTEP"></div>
+        <div class="form-field"><label>Centro de Custo</label><input type="text" id="xd-cc" placeholder="Ex: 5181300000"></div>
+        <div class="form-field"><label>Conta Razão</label><input type="text" id="xd-cr" placeholder="Ex: 6154112140"></div>
+        <div class="form-field"><label>Nº Item Financeiro</label><input type="text" id="xd-nif" placeholder="Ex: 98888"></div>
+        <div class="form-field"><label>Programa Orçamentário</label><input type="text" id="xd-po" placeholder="Ex: 98888"></div>
+        <div class="form-field"><label>Fundos</label><input type="text" id="xd-fun" placeholder="Ex: 1000"></div>
+        <div class="form-field"><label>Mês da Necessidade</label><input type="number" id="xd-mes" min="1" max="12" placeholder="1–12"></div>
+        <div class="form-field"><label>Valor (positivo)</label><input type="number" id="xd-val" placeholder="Ex: 150000"></div>
+      </div>
+      <div class="form-field"><label>Item Orçamento</label><input type="text" id="xd-item" placeholder="Ex: Manutenção corretiva gerador"></div>
+      <div class="form-field" style="margin-bottom:0;"><label>Justificativa Destino <span style="color:#22c55e;">(pré-preenchida · max 249 chars)</span></label><div class="xls-preview" id="prev-dest"></div></div>
+    </div>
+
+    <!-- Footer do modal -->
+    <div style="padding:16px 22px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="closeXLSModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="generateXLS()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar Arquivo XLS</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+const ST={theme:'dark',view:'new-ptr',mode:'text',busy:false,step:'idle',qList:[],qIdx:0,answers:{},origText:'',justOrig:'',justDest:'',score:0,hist:[],curId:null,xlsTipo:'MSO',missing:[]};
+
+// ══════════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════════
+const TMPLS=[
+  {id:'emergencia',name:'Emergência',icon:'🚨',color:'#ef4444',desc:'Urgência ou risco operacional imediato',tags:['Urgente','Operacional'],text:'Preciso realizar transferência emergencial de recursos para atender falha crítica identificada no [EQUIPAMENTO] da unidade [LOCAL], representando risco à operação.'},
+  {id:'manutencao',name:'Manutenção',icon:'🔧',color:'#f59e0b',desc:'Manutenção corretiva ou preventiva de equipamentos',tags:['Manutenção','OPEX'],text:'Necessito transferir recursos para realização de manutenção no [EQUIPAMENTO/SISTEMA] localizado na [ÁREA/UNIDADE]. A conta de origem possui saldo excedente após revisão do planejamento.'},
+  {id:'obras',name:'Obras',icon:'🏗️',color:'#8b5cf6',desc:'Obras civis, reformas e melhorias de infraestrutura',tags:['Obras','Civil'],text:'Transferência de recursos para execução de obra civil na [UNIDADE/LOCAL], referente a [DESCREVER OBRA]. Necessidade surgiu após elaboração do orçamento anual.'},
+  {id:'contrato',name:'Contrato',icon:'📋',color:'#6366f1',desc:'Adequação para contratos e fornecedores',tags:['Contrato','Fornecedor'],text:'Remanejamento para adequação do contrato [Nº] com [FORNECEDOR], em razão de aditivo contratual aprovado com aumento de custos não previsto no orçamento.'},
+  {id:'capex',name:'CAPEX',icon:'📦',color:'#22d3ee',desc:'Investimentos em ativos e bens de capital',tags:['CAPEX','Investimento'],text:'Transferência de recursos para aquisição de [ATIVO/EQUIPAMENTO] necessário para [FINALIDADE]. Demanda surgiu após elaboração do orçamento de investimentos.'},
+  {id:'opex',name:'OPEX',icon:'⚙️',color:'#22c55e',desc:'Despesas operacionais e custos recorrentes',tags:['OPEX','Operacional'],text:'Remanejamento entre contas de despesas operacionais para cobertura de [DEMANDA] não prevista. Conta origem possui saldo excedente disponível.'},
+  {id:'tecnologia',name:'Tecnologia',icon:'💻',color:'#0ea5e9',desc:'Sistemas, softwares e infraestrutura de TI',tags:['TI','Tecnologia'],text:'Transferência para contratação de [SISTEMA/SERVIÇO/LICENÇA] necessário para [FINALIDADE], demanda identificada após elaboração do orçamento de TI.'},
+  {id:'infraestrutura',name:'Infraestrutura',icon:'🏭',color:'#a78bfa',desc:'Infraestrutura operacional e instalações',tags:['Infraestrutura','Operacional'],text:'Remanejamento para serviços de infraestrutura na [UNIDADE], referente a [DEMANDA]. Necessidade identificada após aprovação do orçamento anual.'},
+];
+
+// ══════════════════════════════════════════════
+// ANALYSIS ENGINE
+// ══════════════════════════════════════════════
+const CRIT={
+  contaOrigem:{label:'Identificação da conta origem',w:18,kw:['saldo','excedente','disponível','não será utilizado','sobra','revisão','planejamento','economia','retirada','remanejamento','cancelamento','concluí','otimização','saving','reestruturação','apoio','decorrente','paralisação','transferência de valor']},
+  contaDestino:{label:'Justificativa do destino',w:18,kw:['necessidade','insuficiente','orçamento','imprevisto','emergencial','aumento','surgiu','não prevista','aditivo','mudança','nova demanda','recompor','rateio','cobertura','custo','despesa','pagamento','atendimento','p/atendimento']},
+  demanda:{label:'Motivo da transferência',w:20,kw:['serviço','manutenção','obra','contrato','equipamento','sistema','área','unidade','fornecedor','contratação','aquisição','instalação','reforma','reparo','execução','apoio prestado','atividades','função de','referente ao']},
+  impacto:{label:'Impacto operacional',w:16,kw:['impacto','risco','paralisa','comprometer','afetar','prejudicar','caso não','consequência','interrupção','parada','segurança','irregular','multa','garantindo','continuidade']},
+  beneficio:{label:'Benefício esperado',w:12,kw:['benefício','resultado','melhoria','ganho','eficiência','continuidade','adequação','qualidade','conformidade','garantia','regularização','correto rateio','correto','adequado']},
+  especificidade:{label:'Referências específicas',w:10,kw:['onde','qual','localizado','referente','conforme','nº','número','código','unidade','regional','local','contrato','4600','texp','texl','tcxb']},
+  linguagem:{label:'Linguagem adequada',w:6,minLen:80},
+};
+
+function analyzeText(txt){
+  const t=txt.toLowerCase();const R={};let total=0;const missing=[];
+  for(const[k,c]of Object.entries(CRIT)){
+    if(k==='linguagem'){const ok=txt.length>=c.minLen;R[k]=ok;if(ok)total+=c.w;else missing.push({key:k,label:c.label,q:'Forneça mais detalhes para que a justificativa tenha tamanho e qualidade adequados.'});continue;}
+    const hits=c.kw.filter(w=>t.includes(w)).length;
+    const ok=hits>=2,partial=hits===1;
+    R[k]=ok?'ok':partial?'partial':'fail';
+    if(ok)total+=c.w;else if(partial)total+=Math.round(c.w*.5);
+    if(!ok){
+      const QS={contaOrigem:'Por que os recursos estão sendo retirados da conta de origem? Existe saldo excedente ou a demanda foi concluída/cancelada?',contaDestino:'Por que surgiu esta necessidade na conta destino? Foi emergencial, não prevista, ou houve aumento de custos?',demanda:'Qual exatamente é o serviço, obra ou contrato? Onde? Qual equipamento ou fornecedor?',impacto:'Qual seria o impacto operacional caso esta demanda não seja atendida?',beneficio:'Qual o benefício ou resultado esperado com a execução desta demanda?',especificidade:'Pode detalhar: localização, nº de contrato, fornecedor ou unidade responsável?'};
+      missing.push({key:k,label:c.label,q:QS[k]||'Forneça mais informações.'});
+    }
+  }
+  if(txt.length>300)total=Math.min(100,total+3);
+  if(txt.length>600)total=Math.min(100,total+2);
+  return{checks:R,score:Math.min(100,Math.round(total)),missing};
+}
+
+// ══════════════════════════════════════════════
+// TEXT BUILDER (≤249 chars por justificativa)
+// ══════════════════════════════════════════════
+const MAX=249;
+function smart(txt,max){
+  if(!txt) return '';
+  // limpa trailing dangling chars antes de medir
+  txt=txt.trimEnd().replace(/[,\s\-]+$/,'');
+  if(txt.length<=max) return txt;
+  const s=txt.substring(0,max);
+  let cut=-1;
+  // 1. fim de frase completa ". "
+  let i=s.lastIndexOf('. ');
+  if(i>max*0.55) cut=i+1;
+  // 2. fim de cláusula ", "
+  if(cut<0){i=s.lastIndexOf(', ');if(i>max*0.55) cut=i+1;}
+  // 3. antes de separador " - "
+  if(cut<0){i=s.lastIndexOf(' - ');if(i>max*0.45) cut=i;}
+  // 4. último espaço como fallback
+  if(cut<0){i=s.lastIndexOf(' ');cut=i>max*0.4?i:max;}
+  return txt.substring(0,cut).trimEnd().replace(/[,\s\-]+$/,'');
+}
+
+function buildTexts(data){
+  const a=data.answers||{};
+  // contaOrigem = identificação da conta: código + nome (ex: "TExL - Despesas de Viagens - Transporte e Locomoção")
+  const contaOrig=a.contaOrigem||a.motivoOrigem||'';
+  // demanda = motivo/narrativa da transferência (ex: "Transferência de valor referente ao apoio prestado...")
+  const demanda=a.demanda||data.demandaDesc||'';
+  // contaDestino = justificativa narrativa do destino (ex: "Transferência de recursos para recompor os custos...")
+  const contaDest=a.contaDestino||a.motivoDestino||'';
+  const imp=a.impacto||data.impacto||'';
+  const ccO=data.ccOrig||'';
+  const ccD=data.ccDest||'';
+
+  const UP=s=>s.replace(/[.\s]+$/,'').toUpperCase();
+
+  // ── Origem ──
+  // Estrutura: {CÓDIGO + NOME DA CONTA} - {MOTIVO/NARRATIVA DA TRANSFERÊNCIA}
+  let orig='';
+  if(contaOrig.length>3 && demanda.length>3){
+    const cUp=UP(contaOrig);
+    const dUp=UP(demanda);
+    const full=`${cUp} - ${dUp}`;
+    if(full.length<=MAX){
+      orig=full;
+    } else {
+      const dMax=MAX-cUp.length-3; // 3 = ' - '
+      orig=dMax>20 ? `${cUp} - ${smart(dUp,dMax)}` : smart(full,MAX);
+    }
+  } else if(contaOrig.length>3){
+    orig=smart(UP(contaOrig),MAX);
+  } else if(demanda.length>3){
+    orig=smart(`CONTA${ccO?' '+ccO.toUpperCase():' DE ORIGEM'} - ${UP(demanda)}`,MAX);
+  } else {
+    orig=`CONTA${ccO?' '+ccO.toUpperCase():' DE ORIGEM'} - SALDO DISPONÍVEL PARA REMANEJAMENTO`;
+  }
+
+  // ── Destino ──
+  // Estrutura: {JUSTIFICATIVA NARRATIVA — por que a conta destino precisa dos recursos}
+  let dest='';
+  if(contaDest.length>3){
+    dest=smart(UP(contaDest),MAX);
+  } else if(demanda.length>3 && imp.length>3){
+    const dUp=UP(demanda);const iUp=UP(imp);
+    const full=`P/ATENDIMENTO DA ${dUp}, DESTINADA AO ${iUp}`;
+    if(full.length<=MAX){dest=full;}
+    else{const iMax=MAX-dUp.length-20;dest=iMax>20?`P/ATENDIMENTO DA ${dUp}, DESTINADA AO ${smart(iUp,iMax)}`:smart(full,MAX);}
+  } else if(demanda.length>3){
+    dest=smart(`P/ATENDIMENTO DA DEMANDA: ${UP(demanda)}${ccD?', CONTA '+ccD.toUpperCase():''}`,MAX);
+  } else {
+    dest=`CONTA${ccD?' '+ccD.toUpperCase():' DESTINO'} - RECURSOS NECESSÁRIOS PARA COBERTURA DE DESPESAS NÃO PREVISTAS NO ORÇAMENTO ANUAL`;
+  }
+
+  return{origem:orig,destino:dest};
+}
+
+// ══════════════════════════════════════════════
+// QUESTION FLOW
+// ══════════════════════════════════════════════
+async function runFlow(missing){
+  ST.qList=missing.slice(0,5);ST.qIdx=0;ST.answers={};
+  if(!ST.qList.length){await genFinal();return;}
+  askNext();
+}
+async function askNext(){
+  if(ST.qIdx>=ST.qList.length){await genFinal();return;}
+  const q=ST.qList[ST.qIdx];
+  await wait(350);
+  addMsg('ai',`<strong>${ST.qIdx+1}/${ST.qList.length} —</strong> ${q.q}`);
+  showQInput(q.key);
+}
+function showQInput(key){
+  const box=document.createElement('div');box.className='fade-up';box.style.cssText='display:flex;gap:8px;margin-top:2px;';
+  box.innerHTML=`<div class="input-box" style="flex:1;padding:10px 13px;"><textarea id="q-in" rows="2" style="background:transparent;border:none;outline:none;color:var(--tx);width:100%;resize:none;font-family:inherit;font-size:.86rem;line-height:1.55;" placeholder="Digite sua resposta aqui..."></textarea></div><button class="btn btn-primary" style="align-self:flex-end;" onclick="submitQ('${key}')">Enviar →</button>`;
+  document.getElementById('msgs').appendChild(box);scrollBot();
+  setTimeout(()=>{const e=document.getElementById('q-in');if(e)e.focus();},80);
+}
+async function submitQ(key){
+  const inp=document.getElementById('q-in');if(!inp)return;
+  const val=inp.value.trim();if(!val){notif('Digite uma resposta antes de continuar','err');return;}
+  inp.closest('.fade-up').remove();
+  ST.answers[key]=val;
+  const qItem=ST.qList[ST.qIdx];if(qItem)ST.answers[qItem.label]=val;
+  addMsg('user',val);ST.qIdx++;await askNext();
+}
+async function genFinal(){
+  await wait(250);
+  const typing=addMsg('ai',null,true,true);await wait(1900);typing.remove();
+  const texts=buildTexts({original:ST.origText,answers:ST.answers,ccOrig:'',ccDest:''});
+  ST.justOrig=texts.origem;ST.justDest=texts.destino;
+  showResults(texts.origem,texts.destino);
+  addMsg('ai','✅ <strong>Justificativas geradas!</strong> Cada texto está dentro do limite de 249 caracteres e pronto para copiar no SAP. Você pode editar diretamente nos campos acima, usar os botões de aprimoramento, ou exportar o template XLS.');
+  const an=analyzeText(texts.origem+' '+texts.destino);
+  updateScore(an.score,an.checks,an.missing);
+  ST.step='result';ST.curId=Date.now().toString();ST.busy=false;
+}
+
+function showResults(orig,dest){
+  document.getElementById('ta-orig').value=orig;
+  document.getElementById('ta-dest').value=dest;
+  updateCtr('orig');updateCtr('dest');
+  const ra=document.getElementById('result-area');
+  ra.style.display='block';ra.classList.add('fade-up');
+  scrollBot();
+}
+
+// ══════════════════════════════════════════════
+// CHAR COUNTER
+// ══════════════════════════════════════════════
+function updateCtr(type){
+  const ta=document.getElementById('ta-'+type);
+  const el=document.getElementById('ctr-'+type);
+  if(!ta||!el) return;
+  const len=ta.value.length;
+  el.textContent=len+' / '+MAX;
+  el.className='char-counter '+(len>245?'counter-danger':len>220?'counter-warn':'counter-ok');
+  if(type==='orig') ST.justOrig=ta.value;
+  else ST.justDest=ta.value;
+}
+
+// ══════════════════════════════════════════════
+// IMPROVE (individual - stays ≤249 chars)
+// ══════════════════════════════════════════════
+function improveOne(type,mode){
+  const ta=document.getElementById('ta-'+type);
+  if(!ta||!ta.value.trim()){notif('Nenhum texto para melhorar','err');return;}
+  const cur=ta.value.trim();
+  let improved='';
+  if(mode==='better'){
+    improved=cur.replace('Saldo excedente','Verificou-se a existência de saldo excedente').replace('Recurso para conta','Transferência de recurso para conta').replace('necessita de recursos','necessita de complementação de recursos');
+  } else if(mode==='technical'){
+    improved=cur.replace('em razão de','em decorrência de').replace('não prevista','não prevista durante a elaboração do orçamento anual').replace('Impacto:','Risco operacional identificado:');
+  } else if(mode==='summarize'){
+    const words=cur.split(' ');const half=Math.ceil(words.length*.7);improved=words.slice(0,half).join(' ')+(words.length>half?'.':'');
+  }
+  improved=smart(improved||cur,MAX);
+  ta.value=improved;updateCtr(type);
+  notif(type==='orig'?'Origem aprimorada':'Destino aprimorado','ok');
+}
+
+// ══════════════════════════════════════════════
+// MAIN ANALYZE
+// ══════════════════════════════════════════════
+async function analyze(){
+  const txt=document.getElementById('ptr-in').value.trim();
+  if(!txt){notif('Insira uma justificativa para analisar','err');return;}
+  if(ST.busy) return;
+  ST.busy=true;ST.step='analyzing';ST.origText=txt;
+  addMsg('user',txt);
+  document.getElementById('ptr-in').value='';updateChr();
+  const typing=addMsg('ai',null,true,true);await wait(1500);typing.remove();
+  const an=analyzeText(txt);updateScore(an.score,an.checks,an.missing);
+  if(an.score>=90){
+    addMsg('ai',`🎉 <strong>Texto completo!</strong> Score: <strong style="color:#22c55e">${an.score}%</strong>. Gerando as justificativas separadas...`);
+    ST.answers={};await genFinal();
+  } else if(an.score>=60){
+    const lst=an.missing.map(m=>`<li>☐ ${m.label}</li>`).join('');
+    addMsg('ai',`📊 Score: <strong style="color:#f59e0b">${an.score}%</strong>. Preciso de mais algumas informações para gerar as justificativas completas:<ul>${lst}</ul>Responda às perguntas abaixo:`);
+    await runFlow(an.missing);
+  } else {
+    const lst=an.missing.map(m=>`<li>☐ ${m.label}</li>`).join('');
+    addMsg('ai',`⚠️ Justificativa <strong>incompleta</strong> — Score: <strong style="color:#ef4444">${an.score}%</strong>. Informações obrigatórias faltantes:<ul>${lst}</ul>Vou te guiar com perguntas para montar as duas justificativas corretamente:`);
+    await runFlow(an.missing);
+  }
+}
+
+// ══════════════════════════════════════════════
+// GUIDED FORM
+// ══════════════════════════════════════════════
+function genFromForm(){
+  const g=id=>(document.getElementById(id)||{value:''}).value.trim();
+  const foId=g('fo-id'),foMot=g('fo-mot'),fdJust=g('fd-just');
+  // Validação dos obrigatórios
+  const req={
+    'f-data':'Data do Envio','f-sol':'Solicitante','f-reg':'Regional',
+    'fo-emp':'Empresa Origem','fo-area':'Área Origem','fo-cc':'Centro de Custo Origem',
+    'fo-cf':'Centro Financeiro Origem','fo-cr':'Conta Razão Origem','fo-nif':'Nº Item Financeiro Origem',
+    'fo-mes':'Mês Previsto','fo-val':'Valor Origem','fo-item':'Item Orçamento Origem',
+    'fo-id':'Identificação Conta Origem','fo-mot':'Motivo do saldo disponível',
+    'fd-emp':'Empresa Destino','fd-area':'Área Destino','fd-cc':'Centro de Custo Destino',
+    'fd-cf':'Centro Financeiro Destino','fd-cr':'Conta Razão Destino','fd-nif':'Nº Item Financeiro Destino',
+    'fd-mes':'Mês Necessidade','fd-val':'Valor Destino','fd-item':'Item Orçamento Destino','fd-just':'Justificativa Destino'
+  };
+  const missing=Object.entries(req).filter(([id])=>!g(id)).map(([,lbl])=>lbl);
+  if(missing.length){notif('Campos obrigatórios: '+missing.slice(0,3).join(', ')+(missing.length>3?' e mais '+(missing.length-3)+'…':''),'err');return;}
+  // Construir justificativas
+  const d={
+    ccOrig:g('fo-cc'),ccDest:g('fd-cc'),
+    answers:{contaOrigem:foId,demanda:foMot,contaDestino:fdJust},
+    categoria:''
+  };
+  const texts=buildTexts(d);
+  ST.justOrig=texts.origem;ST.justDest=texts.destino;ST.step='result';ST.curId=Date.now().toString();
+  showResults(texts.origem,texts.destino);
+  const an=analyzeText(texts.origem+' '+texts.destino);
+  updateScore(an.score,an.checks,an.missing);
+  // Sincronizar campos do XLS modal
+  const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
+  const today=new Date().toISOString().split('T')[0];
+  sv('xls-data',g('f-data')||today);sv('xls-sol',g('f-sol'));sv('xls-reg',g('f-reg'));sv('xls-ano',g('fo-ano')||'2026');
+  ST.xlsTipo=g('f-tipo')||'MSO';
+  sv('xo-emp',g('fo-emp'));sv('xo-cc',g('fo-cc'));sv('xo-cr',g('fo-cr'));sv('xo-nif',g('fo-nif'));
+  sv('xo-po',g('fo-po'));sv('xo-fun',g('fo-fun'));sv('xo-mes',g('fo-mes'));
+  const vOrig=parseFloat(g('fo-val'))||0;sv('xo-val',vOrig>0?-vOrig:vOrig);
+  sv('xo-item',g('fo-item'));
+  sv('xd-emp',g('fd-emp'));sv('xd-cc',g('fd-cc'));sv('xd-cr',g('fd-cr'));sv('xd-nif',g('fd-nif'));
+  sv('xd-po',g('fd-po'));sv('xd-fun',g('fd-fun'));sv('xd-mes',g('fd-mes'));sv('xd-val',g('fd-val'));sv('xd-item',g('fd-item'));
+  // Sincronizar previews do modal
+  const po=document.getElementById('prev-orig');if(po)po.textContent=texts.origem;
+  const pd=document.getElementById('prev-dest');if(pd)pd.textContent=texts.destino;
+  notif('Justificativas geradas! Clique em "Baixar XLS" para exportar.','ok');
+}
+
+// ══════════════════════════════════════════════
+// COPY
+// ══════════════════════════════════════════════
+function copyOne(type){
+  const val=document.getElementById('ta-'+type).value;
+  if(!val){notif('Campo vazio','err');return;}
+  navigator.clipboard.writeText(val).then(()=>notif(type==='orig'?'Origem copiada!':'Destino copiado!','ok')).catch(()=>{const ta=document.createElement('textarea');ta.value=val;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);notif('Copiado!','ok');});
+}
+function copyBoth(){
+  const orig=document.getElementById('ta-orig').value;
+  const dest=document.getElementById('ta-dest').value;
+  if(!orig&&!dest){notif('Nada para copiar','err');return;}
+  const combined='JUSTIFICATIVA ORIGEM:\n'+orig+'\n\nJUSTIFICATIVA DESTINO:\n'+dest;
+  navigator.clipboard.writeText(combined).then(()=>notif('Ambas as justificativas copiadas!','ok')).catch(()=>{const ta=document.createElement('textarea');ta.value=combined;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);notif('Copiado!','ok');});
+}
+
+// ══════════════════════════════════════════════
+// XLS MODAL
+// ══════════════════════════════════════════════
+function openXLSModal(){
+  const orig=document.getElementById('ta-orig').value.trim();
+  const dest=document.getElementById('ta-dest').value.trim();
+  if(!orig&&!dest){notif('Gere as justificativas antes de exportar','err');return;}
+  document.getElementById('prev-orig').textContent=orig||'(vazio)';
+  document.getElementById('prev-dest').textContent=dest||'(vazio)';
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('xls-data').value=today;
+  document.getElementById('xls-modal').classList.add('open');
+}
+function closeXLSModal(){document.getElementById('xls-modal').classList.remove('open');}
+function setTipo(t){
+  ST.xlsTipo=t;
+  document.getElementById('tipo-mso').classList.toggle('active',t==='MSO');
+  document.getElementById('tipo-cap').classList.toggle('active',t==='CAPEX');
+}
+
+function gv(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function gn(id){const v=parseFloat(gv(id));return isNaN(v)?null:v;}
+
+function generateXLS(){
+  const tipo=ST.xlsTipo;
+  const orig=document.getElementById('ta-orig').value.trim();
+  const dest=document.getElementById('ta-dest').value.trim();
+  if(!orig||!dest){notif('As justificativas estão vazias','err');return;}
+  if(orig.length>249||dest.length>249){notif('Justificativa ultrapassa 249 chars — ajuste antes de exportar','err');return;}
+
+  const dataEnvio=gv('xls-data');
+  const sol=gv('xls-sol')||'';
+  const reg=gv('xls-reg')||'';
+  const ano=gn('xls-ano')||2026;
+
+  // Build worksheet data (matching template structure)
+  const title='SOLICITAÇÃO DE PTR - '+tipo;
+  const headers=['Ação','Empresa','Área','Ano','Centro de Custo','Centro Financeiro','Conta Razão','Número do item Financeiro','Programa orçamentário','Fundos','Mês Previsto (Origem) /    Mês da necessidade (Destino)','Valor','Item orçamento','Justificativa detalhada'];
+
+  const g2=id=>(document.getElementById(id)||{value:''}).value.trim();
+  const rowOrigem=['Origem ',gv('xo-emp'),g2('fo-area')||gv('xo-emp'),ano,gv('xo-cc'),g2('fo-cf')||gv('xo-cc'),gv('xo-cr'),gv('xo-nif'),gv('xo-po'),gv('xo-fun'),gn('xo-mes'),gn('xo-val'),gv('xo-item'),orig];
+  const rowDestino=['Destino',gv('xd-emp'),g2('fd-area')||gv('xd-emp'),ano,gv('xd-cc'),g2('fd-cf')||gv('xd-cc'),gv('xd-cr'),gv('xd-nif'),gv('xd-po'),gv('xd-fun'),gn('xd-mes'),gn('xd-val'),gv('xd-item'),dest];
+
+  // Create workbook
+  const wb=XLSX.utils.book_new();
+
+  // Sheet function
+  function makeSheet(sheetTitle){
+    const wsData=[
+      [sheetTitle],
+      [null,'Data do Envio:',dataEnvio,null,'Solicitante',sol,null,'Ação','Transferência',null,'Regional:',reg],
+      headers,
+      rowOrigem,
+      rowDestino,
+    ];
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols']=[{wch:10},{wch:8},{wch:8},{wch:6},{wch:14},{wch:14},{wch:14},{wch:16},{wch:14},{wch:8},{wch:14},{wch:12},{wch:22},{wch:55}];
+
+    // Row heights
+    ws['!rows']=[{hpt:24},{hpt:20},{hpt:30},{hpt:60},{hpt:60}];
+
+    // Merge title row A1:N1
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:13}}];
+
+    // Style title cell
+    if(ws['A1']){ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'2D2D8F'}},alignment:{horizontal:'center',vertical:'center'}};}
+
+    // Style header row
+    for(let c=0;c<14;c++){
+      const cell=XLSX.utils.encode_cell({r:2,c});
+      if(ws[cell]){ws[cell].s={font:{bold:true,sz:9,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1F3864'}},alignment:{horizontal:'center',vertical:'center',wrapText:true}};}
+    }
+
+    // Style Origem row
+    for(let c=0;c<14;c++){
+      const cell=XLSX.utils.encode_cell({r:3,c});
+      if(ws[cell]){ws[cell].s={fill:{fgColor:{rgb:'DCE6F1'}},alignment:{wrapText:true,vertical:'top'}};}
+    }
+
+    // Style Destino row
+    for(let c=0;c<14;c++){
+      const cell=XLSX.utils.encode_cell({r:4,c});
+      if(ws[cell]){ws[cell].s={fill:{fgColor:{rgb:'E2EFDA'}},alignment:{wrapText:true,vertical:'top'}};}
+    }
+
+    return ws;
+  }
+
+  const sheetName1=tipo==='MSO'?'PTR_MSO':'PTR_CapexCO';
+  const ws1=makeSheet(title);
+  XLSX.utils.book_append_sheet(wb,ws1,sheetName1);
+
+  // Filename with date
+  const dateFmt=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  const solSlug=(sol||'PTR').replace(/\s+/g,'_').substring(0,20);
+  const fname=`PTR_${tipo}_${solSlug}_${dateFmt}.xlsx`;
+
+  XLSX.writeFile(wb,fname);
+  notif('Arquivo '+fname+' baixado com sucesso!','ok');
+  closeXLSModal();
+
+  // Save to history
+  saveHist(true);
+}
+
+// ══════════════════════════════════════════════
+// SCORE
+// ══════════════════════════════════════════════
+function updateScore(score,checks,missing){
+  ST.score=score;
+  const circ=314,offset=circ-(score/100)*circ;
+  const arc=document.getElementById('score-arc');
+  arc.style.strokeDashoffset=offset;
+  const col=score>=90?'#22c55e':score>=70?'#f59e0b':'#ef4444';
+  arc.style.stroke=col;
+  const numEl=document.getElementById('score-num');numEl.style.color=col;
+  numCount(numEl,0,score,900);
+  document.getElementById('score-lbl').textContent=score>=90?'✅ Aprovável':score>=70?'⚠️ Atenção':'❌ Incompleta';
+  document.getElementById('score-lbl').style.color=col;
+  document.getElementById('score-sub').textContent=score>=90?'Justificativas completas e aprovadas':score>=70?'Complementar algumas informações':'Informações obrigatórias faltando';
+  document.getElementById('score-alert').style.display=score<90?'block':'none';
+  renderChecklist(checks,score);
+  if(missing&&missing.length){ST.missing=missing;document.getElementById('miss-update-btn').style.display='none';document.getElementById('miss-panel').style.display='block';document.getElementById('miss-list').innerHTML=missing.map(m=>`<div class="miss-item" id="miss-item-${m.key}" onclick="fillMissing('${m.key}')" title="Clique para preencher"><div class="miss-item-row"><span style="color:#ef4444;flex-shrink:0;font-size:.95rem;">✕</span><span style="flex:1;">${m.label}</span><span class="miss-arrow" style="color:#f59e0b;font-size:.78rem;">→ preencher</span></div></div>`).join('');}
+  else document.getElementById('miss-panel').style.display='none';
+  refreshStats();
+}
+const MISS_QUESTIONS={
+  contaOrigem:{q:'Informe o código e nome da conta de ORIGEM — aparece como PRIMEIRA parte da justificativa.\nEx: "TExL - Despesas de Viagens - Transporte e Locomoção"\nEx: "TCXB_ Contratação de Serviços para Erradicação de Vegetações nas SES"'},
+  demanda:{q:'Informe o MOTIVO da transferência — aparece após o nome da conta de origem.\nEx: "Transferência de valor referente ao apoio prestado pela equipe TExP às atividades da TExL, em função da reestruturação da equipe."\nEx: "Saldo resultante da otimização dos recursos previstos, sem impacto nas demandas planejadas."'},
+  contaDestino:{q:'Informe a JUSTIFICATIVA DO DESTINO — por que essa conta precisa receber os recursos.\nEx: "Transferência de recursos para recompor os custos decorrentes do apoio operacional prestado entre as equipes, garantindo a continuidade das atividades e o correto rateio das despesas."\nEx: "P/Atendimento da demanda emergencial de Telecom, destinada ao pagamento de despesas c/combustíveis de GAE e PTA."'},
+  impacto:{q:'Qual seria o impacto caso esta transferência NÃO seja aprovada?\nEx: "Paralisação do serviço de vigilância patrimonial" ou "Impossibilidade de pagamento de contrato vigente"'},
+  beneficio:{q:'Qual o benefício esperado com esta transferência?\nEx: "Continuidade operacional, correto rateio das despesas entre equipes, conformidade orçamentária."'},
+  especificidade:{q:'Adicione referências que identificam esta PTR: contrato, unidade, regional, código.\nEx: "Contrato 4600008708 - Regional SP - Unidade GAE/PTA"'},
+  linguagem:{q:'Complemente com mais contexto: fatos, valores, prazos ou responsáveis que reforcem a justificativa.'},
+};
+const ST_FILL={};
+function fillMissing(key){
+  const el=document.getElementById(`miss-item-${key}`);
+  if(!el||el.classList.contains('miss-filled')) return;
+  // fechar outros abertos
+  document.querySelectorAll('.miss-expand').forEach(e=>e.remove());
+  const entry=MISS_QUESTIONS[key];
+  if(!entry) return;
+  const exp=document.createElement('div');
+  exp.className='miss-expand';
+  exp.id=`miss-exp-${key}`;
+  exp.innerHTML=`<textarea id="fill-ta-${key}" rows="2" placeholder="${entry.q}" maxlength="300"></textarea><div class="miss-expand-btns"><button class="miss-confirm-btn" onclick="confirmMissing('${key}')">Confirmar ↩</button><button class="miss-cancel-btn" onclick="cancelMissing('${key}')">Cancelar</button></div>`;
+  el.appendChild(exp);
+  const ta=document.getElementById(`fill-ta-${key}`);
+  ta.focus();
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();confirmMissing(key);}});
+}
+function confirmMissing(key){
+  const ta=document.getElementById(`fill-ta-${key}`);
+  if(!ta||!ta.value.trim()) return;
+  const val=ta.value.trim();
+  ST_FILL[key]=val;
+  const el=document.getElementById(`miss-item-${key}`);
+  if(el){
+    el.classList.add('miss-filled');
+    el.onclick=null;
+    const row=el.querySelector('.miss-item-row');
+    if(row){
+      row.innerHTML=`<span style="color:#22c55e;flex-shrink:0;">✓</span><span style="flex:1;color:var(--tx);">${ST.missing.find(m=>m.key===key)?.label||key}</span><span style="color:var(--tx3);font-size:.75rem;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;">${val.substring(0,24)}${val.length>24?'…':''}</span>`;
+    }
+    const exp=document.getElementById(`miss-exp-${key}`);
+    if(exp) exp.remove();
+  }
+  document.getElementById('miss-update-btn').style.display='block';
+}
+function cancelMissing(key){
+  const exp=document.getElementById(`miss-exp-${key}`);
+  if(exp) exp.remove();
+}
+function applyMissing(){
+  if(!Object.keys(ST_FILL).length) return;
+  const additions=Object.values(ST_FILL).join('. ');
+  ST.origText=(ST.origText?ST.origText+'. ':'')+additions;
+  Object.assign(ST.answers,ST_FILL);
+  go('new-ptr');
+  addMsg('ai','✅ Informações adicionadas! Atualizando as justificativas…');
+  setTimeout(()=>genFinal(),350);
+}
+function renderChecklist(checks,score){
+  const items=[{k:'contaOrigem',l:'Conta origem'},{k:'contaDestino',l:'Conta destino'},{k:'demanda',l:'Demanda detalhada'},{k:'impacto',l:'Impacto operacional'},{k:'beneficio',l:'Benefício esperado'},{k:'especificidade',l:'Informações específicas'},{k:'linguagem',l:'Linguagem adequada'},{ok:score>=90,l:'Informações completas'}];
+  document.getElementById('chklist').innerHTML=items.map(it=>{
+    const ok=it.ok!=null?it.ok:checks[it.k]==='ok'||checks[it.k]===true;
+    const partial=checks[it.k]==='partial';
+    const dc=ok?'dot-ok':partial?'dot-warn':'dot-fail';
+    const ic=ok?'✓':partial?'~':'○';
+    const tc=ok?'var(--tx)':partial?'#f59e0b':'var(--tx3)';
+    return `<div class="chk-item"><div class="chk-dot ${dc}">${ic}</div><span style="color:${tc}">${it.l}</span></div>`;
+  }).join('');
+}
+function numCount(el,from,to,dur){const s=performance.now();const run=now=>{const p=Math.min((now-s)/dur,1);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(run);};requestAnimationFrame(run);}
+
+// ══════════════════════════════════════════════
+// MESSAGES
+// ══════════════════════════════════════════════
+function addMsg(role,html,animate=true,typing=false){
+  const C=document.getElementById('msgs');const wrap=document.createElement('div');wrap.className=`msg-${role}${animate?' fade-up':''}`;
+  const av=document.createElement('div');av.className=`msg-av av-${role}`;av.textContent=role==='ai'?'⚡':'U';
+  const bub=document.createElement('div');bub.className=`msg-bubble bubble-${role}`;
+  if(typing)bub.innerHTML='<div style="display:flex;gap:4px;padding:2px 0;"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  else bub.innerHTML=html;
+  wrap.appendChild(av);wrap.appendChild(bub);C.appendChild(wrap);scrollBot();return wrap;
+}
+function scrollBot(){const s=document.getElementById('ptr-scroll');setTimeout(()=>{s.scrollTop=s.scrollHeight;},60);}
+
+// ══════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════
+function saveHist(auto=false){
+  if(!ST.justOrig&&!ST.justDest){if(!auto)notif('Nenhuma PTR para salvar','err');return;}
+  if(ST.hist.find(h=>h.id===ST.curId)){if(!auto)notif('PTR já está no histórico','info');return;}
+  const item={id:ST.curId||Date.now().toString(),title:ST.justOrig.substring(0,60)+'...',origem:ST.justOrig,destino:ST.justDest,score:ST.score,date:new Date().toLocaleDateString('pt-BR'),ts:Date.now(),fav:false,cat:detectCat(ST.justOrig+' '+ST.justDest)};
+  ST.hist.unshift(item);persHist();if(!auto)notif('PTR salva!','ok');refreshStats();
+}
+function setMode(m){
+  ST.mode=m;
+  const isForm=m==='form';
+  document.getElementById('pane-text').style.display=isForm?'none':'block';
+  document.getElementById('pane-form').style.display=isForm?'block':'none';
+  const tTxt=document.getElementById('tab-txt');
+  const tFrm=document.getElementById('tab-frm');
+  const on='linear-gradient(135deg,#6366f1,#8b5cf6)';const off='transparent';
+  if(tTxt){tTxt.style.background=isForm?off:on;tTxt.style.color=isForm?'var(--tx2)':'#fff';}
+  if(tFrm){tFrm.style.background=isForm?on:off;tFrm.style.color=isForm?'#fff':'var(--tx2)';}
+  // Pré-preencher data de hoje ao abrir formulário
+  if(isForm){
+    const fd=document.getElementById('f-data');
+    if(fd&&!fd.value)fd.value=new Date().toISOString().split('T')[0];
+    const fa=document.getElementById('fo-ano');
+    if(fa&&!fa.value)fa.value=new Date().getFullYear();
+  }
+}
+function clearForm(){
+  ['f-data','f-sol','f-reg',
+   'fo-emp','fo-area','fo-cc','fo-cf','fo-cr','fo-nif','fo-po','fo-fun','fo-mes','fo-val','fo-item','fo-id','fo-mot',
+   'fd-emp','fd-area','fd-cc','fd-cf','fd-cr','fd-nif','fd-po','fd-fun','fd-mes','fd-val','fd-item','fd-just'
+  ].forEach(id=>{const e=document.getElementById(id);if(e){if(id==='fo-ano')e.value='2026';else e.value='';}});
+  const ft=document.getElementById('f-tipo');if(ft)ft.value='MSO';
+  notif('Formulário limpo','ok');
+}
+function detectCat(txt){const t=txt.toLowerCase();if(t.includes('emerg'))return 'Emergência';if(t.includes('manutenção')||t.includes('reparo'))return 'Manutenção';if(t.includes('obra'))return 'Obras';if(t.includes('contrato'))return 'Contrato';if(t.includes('tecnologia')||t.includes('sistema'))return 'Tecnologia';if(t.includes('capex')||t.includes('ativo'))return 'CAPEX';return 'OPEX';}
+function persHist(){try{localStorage.setItem('ptr_hist',JSON.stringify(ST.hist));}catch(e){}}
+function loadHist(){try{const s=localStorage.getItem('ptr_hist');if(s)ST.hist=JSON.parse(s);}catch(e){ST.hist=[];}}
+function renderHist(){
+  const list=document.getElementById('hist-list');const q=(document.getElementById('hsearch')?.value||'').toLowerCase();
+  const items=ST.hist.filter(h=>!q||h.title.toLowerCase().includes(q)||h.origem.toLowerCase().includes(q)||h.destino.toLowerCase().includes(q));
+  if(!items.length){list.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--tx3);"><div style="font-size:2.2rem;margin-bottom:10px;">📝</div><div style="font-weight:600;">Nenhuma PTR encontrada</div><div style="font-size:.8rem;margin-top:5px;">Crie sua primeira PTR clicando em Nova PTR</div></div>`;return;}
+  const catCol={Emergência:'#ef4444',Manutenção:'#f59e0b',Obras:'#8b5cf6',Contrato:'#6366f1',Tecnologia:'#0ea5e9',CAPEX:'#22d3ee',OPEX:'#22c55e'};
+  list.innerHTML=items.map(h=>{const c=catCol[h.cat]||'#6366f1';const sc=h.score>=90?'badge-green':h.score>=70?'badge-yellow':'badge-red';
+    return `<div class="hist-item" onclick="loadPtr('${h.id}')">
+      <div style="width:42px;height:42px;border-radius:9px;background:${c}1a;border:1px solid ${c}33;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:${c};font-weight:800;font-size:.78rem;">${h.score}%</span></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.title}</div>
+        <div style="font-size:.73rem;color:var(--tx3);margin-top:3px;display:flex;gap:8px;align-items:center;"><span>${h.date}</span><span class="badge badge-gray">${h.cat}</span><span class="badge ${sc}">${h.score}%</span></div>
+        <div style="font-size:.72rem;color:var(--tx3);margin-top:5px;"><span style="color:#818cf8;">Orig:</span> ${(h.origem||'').substring(0,80)}...</div>
+        <div style="font-size:.72rem;color:var(--tx3);margin-top:2px;"><span style="color:#4ade80;">Dest:</span> ${(h.destino||'').substring(0,80)}...</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:center;flex-shrink:0;">
+        <button class="btn-icon" style="width:28px;height:28px;font-size:.85rem;" onclick="event.stopPropagation();toggleFav('${h.id}')">${h.fav?'⭐':'☆'}</button>
+        <button class="btn-icon" style="width:28px;height:28px;" onclick="event.stopPropagation();dupPtr('${h.id}')" title="Duplicar"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+        <button class="btn-icon" style="width:28px;height:28px;" onclick="event.stopPropagation();delPtr('${h.id}')" title="Excluir"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+      </div>
+    </div>`;}).join('');
+}
+function loadPtr(id){const h=ST.hist.find(x=>x.id===id);if(!h)return;ST.justOrig=h.origem;ST.justDest=h.destino;ST.curId=h.id;ST.score=h.score;go('new-ptr');showResults(h.origem,h.destino);const an=analyzeText(h.origem+' '+h.destino);updateScore(an.score,an.checks,an.missing);notif('PTR carregada!','ok');}
+function delPtr(id){if(!confirm('Excluir esta PTR?'))return;ST.hist=ST.hist.filter(h=>h.id!==id);persHist();renderHist();refreshStats();notif('PTR excluída','info');}
+function dupPtr(id){const h=ST.hist.find(x=>x.id===id);if(!h)return;const c={...h,id:Date.now().toString(),date:new Date().toLocaleDateString('pt-BR'),ts:Date.now(),fav:false,title:h.title+' (cópia)'};ST.hist.unshift(c);persHist();renderHist();notif('PTR duplicada!','ok');}
+function toggleFav(id){const h=ST.hist.find(x=>x.id===id);if(h){h.fav=!h.fav;persHist();renderHist();renderFavs();}}
+function renderFavs(){const favs=ST.hist.filter(h=>h.fav);const list=document.getElementById('fav-list');if(!list)return;if(!favs.length){list.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--tx3);"><div style="font-size:2.2rem;margin-bottom:10px;">⭐</div><div style="font-weight:600;">Nenhum favorito</div><div style="font-size:.8rem;margin-top:5px;">Marque PTRs como favoritas no Histórico</div></div>`;return;}list.innerHTML=favs.map(h=>`<div class="hist-item" onclick="loadPtr('${h.id}')"><div style="font-size:1.4rem;">⭐</div><div style="flex:1;"><div style="font-weight:600;font-size:.86rem;">${h.title}</div><div style="font-size:.73rem;color:var(--tx3);margin-top:3px;">${h.date} · Score: ${h.score}%</div></div></div>`).join('');}
+
+// ══════════════════════════════════════════════
+// TEMPLATES VIEW
+// ══════════════════════════════════════════════
+function renderTmpls(){const grid=document.getElementById('tmpl-grid');if(!grid)return;grid.innerHTML=TMPLS.map(t=>`<div class="tmpl-card" onclick="useTemplate('${t.id}')"><div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:11px;background:${t.color}1a;border:1px solid ${t.color}33;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">${t.icon}</div><div><div style="font-weight:700;font-size:.9rem;">${t.name}</div><div style="display:flex;gap:4px;margin-top:3px;">${t.tags.map(g=>`<span class="badge badge-gray">${g}</span>`).join('')}</div></div></div><p style="font-size:.79rem;color:var(--tx2);line-height:1.55;">${t.desc}</p><button class="btn btn-ghost btn-sm" style="align-self:flex-start;font-size:.77rem;">Usar modelo →</button></div>`).join('');}
+function useTemplate(id){const t=TMPLS.find(x=>x.id===id);if(!t)return;document.getElementById('ptr-in').value=t.text;updateChr();setMode('text');go('new-ptr');notif(`Modelo "${t.name}" aplicado!`,'ok');}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDash(){
+  const total=ST.hist.length;const avg=total?Math.round(ST.hist.reduce((s,h)=>s+h.score,0)/total):0;const mins=total*22;
+  const dc=document.getElementById('dash-stats');if(!dc)return;
+  [{l:'PTRs Criadas',v:total,icon:'📄',c:'#6366f1',s:'total'},{l:'Score Médio',v:total?avg+'%':'—',icon:'⭐',c:'#f59e0b',s:'qualidade geral'},{l:'Reprovações Evitadas',v:Math.round(total*.82),icon:'✅',c:'#22c55e',s:'estimativa'},{l:'Tempo Economizado',v:`${Math.floor(mins/60)}h ${mins%60}m`,icon:'⏱️',c:'#22d3ee',s:'~22min por PTR'}].forEach(s=>{dc.innerHTML+=`<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div style="font-size:.78rem;color:var(--tx2);font-weight:500;">${s.l}</div><div style="font-size:1.2rem;">${s.icon}</div></div><div style="font-size:1.75rem;font-weight:800;color:${s.c};line-height:1;">${s.v}</div><div style="font-size:.7rem;color:var(--tx3);margin-top:4px;">${s.s}</div></div>`;});
+  const cats={};ST.hist.forEach(h=>{cats[h.cat||'Geral']=(cats[h.cat||'Geral']||0)+1;});
+  const maxC=Math.max(...Object.values(cats),1);const catCol={Emergência:'#ef4444',Manutenção:'#f59e0b',Obras:'#8b5cf6',Contrato:'#6366f1',Tecnologia:'#0ea5e9',CAPEX:'#22d3ee',OPEX:'#22c55e',Geral:'#a78bfa'};
+  const cc=document.getElementById('cat-chart');if(cc){cc.innerHTML=Object.keys(cats).length?Object.entries(cats).map(([cat,cnt])=>{const pct=Math.round((cnt/maxC)*100);const c=catCol[cat]||'#6366f1';return `<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:3px;"><span style="color:var(--tx2);">${cat}</span><span style="font-weight:600;">${cnt}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${c};"></div></div></div>`;}).join(''):`<div style
