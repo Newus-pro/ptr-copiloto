@@ -843,6 +843,7 @@ function setTipo(t){
 
 function gv(id){const e=document.getElementById(id);return e?e.value.trim():'';}
 function gn(id){const v=parseFloat(gv(id));return isNaN(v)?null:v;}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 function generateXLS(){
   const tipo=ST.xlsTipo;
@@ -1117,4 +1118,4 @@ function renderDash(){
 
 // ══════════════════════════════════════════════
 // UI HELPERS
-// ══════════════════
+// ═�
