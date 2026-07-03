@@ -476,13 +476,15 @@ A IA analisa, detecta o que falta, faz perguntas e gera automaticamente as duas 
       <div class="section-title" style="color:#818cf8;">📤 Linha Origem</div>
       <div class="xls-grid">
         <div class="form-field"><label>Empresa</label><input type="text" id="xo-emp" placeholder="Ex: CTEP"></div>
+        <div class="form-field"><label>Área <span class="req">*</span></label><input type="text" id="xo-area" placeholder="Ex: CTEP"></div>
         <div class="form-field"><label>Centro de Custo</label><input type="text" id="xo-cc" placeholder="Ex: 5000000000"></div>
+        <div class="form-field"><label>Centro Financeiro <span class="req">*</span></label><input type="text" id="xo-cf" placeholder="Ex: 5141300000"></div>
         <div class="form-field"><label>Conta Razão</label><input type="text" id="xo-cr" placeholder="Ex: 6154112140"></div>
         <div class="form-field"><label>Nº Item Financeiro</label><input type="text" id="xo-nif" placeholder="Ex: 98888"></div>
         <div class="form-field"><label>Programa Orçamentário</label><input type="text" id="xo-po" placeholder="Ex: 98888"></div>
         <div class="form-field"><label>Fundos</label><input type="text" id="xo-fun" placeholder="Ex: 1000"></div>
         <div class="form-field"><label>Mês Previsto</label><input type="number" id="xo-mes" min="1" max="12" placeholder="1–12"></div>
-        <div class="form-field"><label>Valor (negativo)</label><input type="number" id="xo-val" placeholder="Ex: -150000"></div>
+        <div class="form-field"><label>Valor R$ (negativo)</label><input type="number" id="xo-val" placeholder="Ex: -150000"></div>
       </div>
       <div class="form-field"><label>Item Orçamento</label><input type="text" id="xo-item" placeholder="Ex: Hospedagem encontro de líderes"></div>
       <div class="form-field" style="margin-bottom:0;"><label>Justificativa Origem <span style="color:#6366f1;">(pré-preenchida · max 249 chars)</span></label><div class="xls-preview" id="prev-orig"></div></div>
@@ -493,13 +495,15 @@ A IA analisa, detecta o que falta, faz perguntas e gera automaticamente as duas 
       <div class="section-title" style="color:#4ade80;">📥 Linha Destino</div>
       <div class="xls-grid">
         <div class="form-field"><label>Empresa</label><input type="text" id="xd-emp" placeholder="Ex: CTEP"></div>
+        <div class="form-field"><label>Área <span class="req">*</span></label><input type="text" id="xd-area" placeholder="Ex: CTEP"></div>
         <div class="form-field"><label>Centro de Custo</label><input type="text" id="xd-cc" placeholder="Ex: 5181300000"></div>
+        <div class="form-field"><label>Centro Financeiro <span class="req">*</span></label><input type="text" id="xd-cf" placeholder="Ex: 5141300000"></div>
         <div class="form-field"><label>Conta Razão</label><input type="text" id="xd-cr" placeholder="Ex: 6154112140"></div>
         <div class="form-field"><label>Nº Item Financeiro</label><input type="text" id="xd-nif" placeholder="Ex: 98888"></div>
         <div class="form-field"><label>Programa Orçamentário</label><input type="text" id="xd-po" placeholder="Ex: 98888"></div>
         <div class="form-field"><label>Fundos</label><input type="text" id="xd-fun" placeholder="Ex: 1000"></div>
         <div class="form-field"><label>Mês da Necessidade</label><input type="number" id="xd-mes" min="1" max="12" placeholder="1–12"></div>
-        <div class="form-field"><label>Valor (positivo)</label><input type="number" id="xd-val" placeholder="Ex: 150000"></div>
+        <div class="form-field"><label>Valor R$ (positivo)</label><input type="number" id="xd-val" placeholder="Ex: 150000"></div>
       </div>
       <div class="form-field"><label>Item Orçamento</label><input type="text" id="xd-item" placeholder="Ex: Manutenção corretiva gerador"></div>
       <div class="form-field" style="margin-bottom:0;"><label>Justificativa Destino <span style="color:#22c55e;">(pré-preenchida · max 249 chars)</span></label><div class="xls-preview" id="prev-dest"></div></div>
@@ -787,12 +791,14 @@ function genFromForm(){
   const today=new Date().toISOString().split('T')[0];
   sv('xls-data',g('f-data')||today);sv('xls-sol',g('f-sol'));sv('xls-reg',g('f-reg'));sv('xls-ano',g('fo-ano')||'2026');
   ST.xlsTipo=g('f-tipo')||'MSO';
-  sv('xo-emp',g('fo-emp'));sv('xo-cc',g('fo-cc'));sv('xo-cr',g('fo-cr'));sv('xo-nif',g('fo-nif'));
-  sv('xo-po',g('fo-po'));sv('xo-fun',g('fo-fun'));sv('xo-mes',g('fo-mes'));
+  sv('xo-emp',g('fo-emp'));sv('xo-area',g('fo-area'));sv('xo-cc',g('fo-cc'));sv('xo-cf',g('fo-cf'));
+  sv('xo-cr',g('fo-cr'));sv('xo-nif',g('fo-nif'));sv('xo-po',g('fo-po'));sv('xo-fun',g('fo-fun'));
+  sv('xo-mes',g('fo-mes'));
   const vOrig=parseFloat(g('fo-val'))||0;sv('xo-val',vOrig>0?-vOrig:vOrig);
   sv('xo-item',g('fo-item'));
-  sv('xd-emp',g('fd-emp'));sv('xd-cc',g('fd-cc'));sv('xd-cr',g('fd-cr'));sv('xd-nif',g('fd-nif'));
-  sv('xd-po',g('fd-po'));sv('xd-fun',g('fd-fun'));sv('xd-mes',g('fd-mes'));sv('xd-val',g('fd-val'));sv('xd-item',g('fd-item'));
+  sv('xd-emp',g('fd-emp'));sv('xd-area',g('fd-area'));sv('xd-cc',g('fd-cc'));sv('xd-cf',g('fd-cf'));
+  sv('xd-cr',g('fd-cr'));sv('xd-nif',g('fd-nif'));sv('xd-po',g('fd-po'));sv('xd-fun',g('fd-fun'));
+  sv('xd-mes',g('fd-mes'));sv('xd-val',g('fd-val'));sv('xd-item',g('fd-item'));
   // Sincronizar previews do modal
   const po=document.getElementById('prev-orig');if(po)po.textContent=texts.origem;
   const pd=document.getElementById('prev-dest');if(pd)pd.textContent=texts.destino;
@@ -854,9 +860,9 @@ function generateXLS(){
   const title='SOLICITAÇÃO DE PTR - '+tipo;
   const headers=['Ação','Empresa','Área','Ano','Centro de Custo','Centro Financeiro','Conta Razão','Número do item Financeiro','Programa orçamentário','Fundos','Mês Previsto (Origem) /    Mês da necessidade (Destino)','Valor','Item orçamento','Justificativa detalhada'];
 
-  const g2=id=>(document.getElementById(id)||{value:''}).value.trim();
-  const rowOrigem=['Origem ',gv('xo-emp'),g2('fo-area')||gv('xo-emp'),ano,gv('xo-cc'),g2('fo-cf')||gv('xo-cc'),gv('xo-cr'),gv('xo-nif'),gv('xo-po'),gv('xo-fun'),gn('xo-mes'),gn('xo-val'),gv('xo-item'),orig];
-  const rowDestino=['Destino',gv('xd-emp'),g2('fd-area')||gv('xd-emp'),ano,gv('xd-cc'),g2('fd-cf')||gv('xd-cc'),gv('xd-cr'),gv('xd-nif'),gv('xd-po'),gv('xd-fun'),gn('xd-mes'),gn('xd-val'),gv('xd-item'),dest];
+  const fmtBRL=v=>{if(v==null||isNaN(v))return '';return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});};
+  const rowOrigem=['Origem ',gv('xo-emp'),gv('xo-area'),ano,gv('xo-cc'),gv('xo-cf'),gv('xo-cr'),gv('xo-nif'),gv('xo-po'),gv('xo-fun'),gn('xo-mes'),fmtBRL(gn('xo-val')),gv('xo-item'),orig];
+  const rowDestino=['Destino',gv('xd-emp'),gv('xd-area'),ano,gv('xd-cc'),gv('xd-cf'),gv('xd-cr'),gv('xd-nif'),gv('xd-po'),gv('xd-fun'),gn('xd-mes'),fmtBRL(gn('xd-val')),gv('xd-item'),dest];
 
   // Create workbook
   const wb=XLSX.utils.book_new();
@@ -1106,4 +1112,9 @@ function renderDash(){
   [{l:'PTRs Criadas',v:total,icon:'📄',c:'#6366f1',s:'total'},{l:'Score Médio',v:total?avg+'%':'—',icon:'⭐',c:'#f59e0b',s:'qualidade geral'},{l:'Reprovações Evitadas',v:Math.round(total*.82),icon:'✅',c:'#22c55e',s:'estimativa'},{l:'Tempo Economizado',v:`${Math.floor(mins/60)}h ${mins%60}m`,icon:'⏱️',c:'#22d3ee',s:'~22min por PTR'}].forEach(s=>{dc.innerHTML+=`<div class="stat-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div style="font-size:.78rem;color:var(--tx2);font-weight:500;">${s.l}</div><div style="font-size:1.2rem;">${s.icon}</div></div><div style="font-size:1.75rem;font-weight:800;color:${s.c};line-height:1;">${s.v}</div><div style="font-size:.7rem;color:var(--tx3);margin-top:4px;">${s.s}</div></div>`;});
   const cats={};ST.hist.forEach(h=>{cats[h.cat||'Geral']=(cats[h.cat||'Geral']||0)+1;});
   const maxC=Math.max(...Object.values(cats),1);const catCol={Emergência:'#ef4444',Manutenção:'#f59e0b',Obras:'#8b5cf6',Contrato:'#6366f1',Tecnologia:'#0ea5e9',CAPEX:'#22d3ee',OPEX:'#22c55e',Geral:'#a78bfa'};
-  const cc=document.getElementById('cat-chart');if(cc){cc.innerHTML=Object.keys(cats).length?Object.entries(cats).map(([cat,cnt])=>{const pct=Math.round((cnt/maxC)*100);const c=catCol[cat]||'#6366f1';return `<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:3px;"><span style="color:var(--tx2);">${cat}</span><span style="font-weight:600;">${cnt}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${c};"></div></div></div>`;}).join(''):`<div style
+  const cc=document.getElementById('cat-chart');if(cc){cc.innerHTML=Object.keys(cats).length?Object.entries(cats).map(([cat,cnt])=>{const pct=Math.round((cnt/maxC)*100);const c=catCol[cat]||'#6366f1';return `<div style="margin-bottom:9px;"><div style="display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:3px;"><span style="color:var(--tx2);">${cat}</span><span style="font-weight:600;">${cnt}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${c};"></div></div></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--tx3);font-size:.82rem;">Nenhum dado ainda</div>`;}
+  const tc=document.getElementById('trend-chart');if(tc&&total>0){const months=['Jan','Fev','Mar','Abr','Mai','Jun'];const base=Math.max(50,avg-15);const pts=months.map((_,i)=>Math.min(100,base+Math.round((avg-base)*(i/5))));const minPt=Math.min(...pts),maxPt=Math.max(...pts,minPt+1);const toY=v=>80-((v-minPt)/(maxPt-minPt))*60+5;tc.innerHTML=`<svg viewBox="0 0 300 100" style="width:100%;height:90px;"><polyline points="${pts.map((v,i)=>`${i*(240/5)+30},${toY(v)}`).join(' ')}" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((v,i)=>`<circle cx="${i*(240/5)+30}" cy="${toY(v)}" r="3.5" fill="#6366f1"/><text x="${i*(240/5)+30}" y="${toY(v)-8}" text-anchor="middle" font-size="7.5" fill="var(--tx2)">${v}%</text>`).join('')}${months.map((m,i)=>`<text x="${i*(240/5)+30}" y="97" text-anchor="middle" font-size="7.5" fill="var(--tx3)">${m}</text>`).join('')}</svg>`;}else if(tc)tc.innerHTML=`<div style="text-align:center;padding:20px;color:var(--tx3);font-size:.82rem;">Nenhum dado ainda</div>`;}
+
+// ══════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════
