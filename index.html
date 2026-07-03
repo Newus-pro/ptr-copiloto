@@ -1306,4 +1306,10 @@ document.addEventListener('DOMContentLoaded',function(){
   loadHist();refreshStats();renderTmpls();
   var ta=document.getElementById('ptr-in');
   if(ta)ta.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();analyze();}});
-  addMsg('ai','👋 Olá! Sou o <strong>PTR Copiloto</strong> — assistente para justificativas de PTR no SAP.<br><br>Cole o texto da sua justificativa e clique em <strong>Analisar com IA</strong>, o
+  addMsg('ai','👋 Olá! Sou o <strong>PTR Copiloto</strong> — assistente para justificativas de PTR no SAP.<br><br>Cole o texto da sua justificativa e clique em <strong>Analisar com IA</strong>, ou use o <strong>📋 Formulário Guiado</strong> para preencher todos os dados e gerar o template XLS completo.');
+  try{var t=localStorage.getItem('ptr_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+});
+
+</script>
+</body>
+</html>
