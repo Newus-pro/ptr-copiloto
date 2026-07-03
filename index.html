@@ -673,7 +673,12 @@ async function submitQ(key){
   inp.closest('.fade-up').remove();
   ST.answers[key]=val;
   const qItem=ST.qList[ST.qIdx];if(qItem)ST.answers[qItem.label]=val;
-  addMsg('user',val);ST.qIdx++;await askNext();
+  addMsg('user',val);ST.qIdx++;
+  // Atualizar score em tempo real com as respostas parciais
+  const partial=buildTexts({original:ST.origText,answers:ST.answers,ccOrig:'',ccDest:''});
+  const anPartial=analyzeText((partial.origem||'')+' '+(partial.destino||''));
+  updateScore(anPartial.score,anPartial.checks,anPartial.missing);
+  await askNext();
 }
 async function genFinal(){
   await wait(250);
