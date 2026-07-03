@@ -1118,4 +1118,191 @@ function renderDash(){
 
 // ══════════════════════════════════════════════
 // UI HELPERS
-// ═�
+// ══════════════════════════════════════════════
+
+function notif(msg,type){
+  type=type||'ok';
+  var box=document.getElementById('notif-box');if(!box)return;
+  var el=document.createElement('div');
+  var colors={ok:'#22c55e',err:'#ef4444',info:'#6366f1',warn:'#f59e0b'};
+  el.style.cssText='background:'+(colors[type]||colors.ok)+';color:#fff;padding:9px 16px;border-radius:10px;font-size:.83rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.35);margin-bottom:6px;pointer-events:none;';
+  el.textContent=msg;box.appendChild(el);
+  setTimeout(function(){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(function(){el.remove();},300);},2800);
+}
+
+function addMsg(role,content,isTyping){
+  var msgs=document.getElementById('msgs');if(!msgs)return null;
+  var div=document.createElement('div');div.className='fade-up';
+  var isAI=role==='ai';
+  div.style.cssText='display:flex;gap:10px;align-items:flex-start;'+(isAI?'':'flex-direction:row-reverse;');
+  var av=document.createElement('div');
+  av.style.cssText='width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;'+(isAI?'background:linear-gradient(135deg,#6366f1,#8b5cf6);':'background:var(--bg3);border:1px solid var(--bd);');
+  av.innerHTML=isAI?'🤖':'👤';
+  var bubble=document.createElement('div');
+  bubble.style.cssText='max-width:calc(100% - 44px);padding:10px 14px;border-radius:'+(isAI?'4px 14px 14px 14px':'14px 4px 14px 14px')+';font-size:.86rem;line-height:1.6;'+(isAI?'background:var(--card);border:1px solid var(--bd);':'background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;');
+  if(isTyping){bubble.innerHTML='<span style="display:inline-flex;gap:4px;align-items:center;"><span class="typing-dot"></span><span class="typing-dot" style="animation-delay:.2s"></span><span class="typing-dot" style="animation-delay:.4s"></span></span>';}
+  else{bubble.innerHTML=content||'';}
+  div.appendChild(av);div.appendChild(bubble);msgs.appendChild(div);scrollBot();
+  return div;
+}
+
+function go(view){
+  ST.view=view;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  var el=document.getElementById('view-'+view);if(el)el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var nb=document.querySelector('.nav-item[data-view="'+view+'"]');if(nb)nb.classList.add('active');
+  if(view==='history')renderHist();
+  if(view==='templates')renderTmpls();
+  if(view==='dashboard')renderDash();
+  if(view==='favorites')renderFavs();
+}
+
+function scrollBot(){
+  var msgs=document.getElementById('msgs');
+  if(msgs)requestAnimationFrame(function(){msgs.scrollTop=msgs.scrollHeight;});
+}
+
+function updateChr(){
+  var ta=document.getElementById('ptr-in');
+  var ctr=document.getElementById('chr-count');
+  if(ta&&ctr)ctr.textContent=ta.value.length;
+}
+
+function updateCtr(which){
+  var ta=document.getElementById('ta-'+which);
+  var ctr=document.getElementById('ctr-'+which);
+  if(!ta||!ctr)return;
+  var len=ta.value.length;
+  ctr.textContent=len+' / 249';
+  ctr.className='char-counter '+(len>249?'counter-over':len>220?'counter-warn':'counter-ok');
+}
+
+function updateScore(score,checks,missing){
+  ST.score=score;ST.missing=missing||[];
+  var arc=document.getElementById('score-arc');var num=document.getElementById('score-num');
+  var lbl=document.getElementById('score-lbl');var sub=document.getElementById('score-sub');
+  var alert=document.getElementById('score-alert');
+  var c=score>=90?'#22c55e':score>=60?'#f59e0b':'#ef4444';
+  if(arc){arc.style.strokeDashoffset=314-(314*(score/100));arc.style.stroke=c;}
+  if(num){num.textContent=score;num.style.color=c;}
+  if(lbl)lbl.textContent=score>=90?'Excelente!':score>=70?'Bom':'Incompleto';
+  if(sub)sub.textContent=score>=90?'Justificativa completa':score>=70?(missing.length+' item(s) podem melhorar'):(missing.length+' item(s) faltando');
+  if(alert)alert.style.display=score<90?'block':'none';
+  var ck=document.getElementById('chklist');
+  if(ck&&checks)ck.innerHTML=checks.map(function(c){return '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:.78rem;"><span style="color:'+(c.ok?'#22c55e':'#ef4444')+';font-size:.9rem;">'+(c.ok?'✓':'✗')+'</span><span style="'+(c.ok?'':'color:var(--tx3)')+'">'+c.label+'</span></div>';}).join('');
+  var mp=document.getElementById('miss-panel');var ml=document.getElementById('miss-list');
+  if(mp&&ml){
+    if(missing.length){
+      mp.style.display='block';
+      ml.innerHTML=missing.map(function(m){return '<div class="miss-item '+(ST_FILL[m.key]?'miss-filled':'')+'" id="miss-item-'+m.key+'" onclick="fillMissing(\''+m.key+'\')"><div class="miss-item-row"><span style="font-size:.9rem;">'+(ST_FILL[m.key]?'✅':'⭕')+'</span><span style="font-size:.8rem;flex:1;">'+m.label+'</span></div></div>';}).join('');
+    }else{
+      mp.style.display='none';
+      var ub=document.getElementById('miss-update-btn');if(ub)ub.style.display='none';
+    }
+  }
+  refreshStats();
+}
+
+function showResults(orig,dest){
+  var ra=document.getElementById('result-area');if(ra)ra.style.display='block';
+  var to=document.getElementById('ta-orig');var td=document.getElementById('ta-dest');
+  if(to){to.value=orig;updateCtr('orig');}
+  if(td){td.value=dest;updateCtr('dest');}
+  var po=document.getElementById('prev-orig');var pd=document.getElementById('prev-dest');
+  if(po)po.textContent=orig;if(pd)pd.textContent=dest;
+}
+
+function copyOne(type){
+  var ta=document.getElementById('ta-'+type);if(!ta||!ta.value){notif('Nada para copiar','err');return;}
+  navigator.clipboard.writeText(ta.value).then(function(){notif(type==='orig'?'Origem copiada!':'Destino copiado!','ok');}).catch(function(){var t=document.createElement('textarea');t.value=ta.value;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);notif('Copiado!','ok');});
+}
+
+function copyBoth(){
+  var o=(document.getElementById('ta-orig')||{value:''}).value;
+  var d=(document.getElementById('ta-dest')||{value:''}).value;
+  if(!o&&!d){notif('Nada para copiar','err');return;}
+  var combined='ORIGEM:\n'+o+'\n\nDESTINO:\n'+d;
+  navigator.clipboard.writeText(combined).then(function(){notif('Ambas copiadas!','ok');}).catch(function(){var t=document.createElement('textarea');t.value=combined;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);notif('Copiado!','ok');});
+}
+
+function improveOne(type,action){
+  var ta=document.getElementById('ta-'+type);if(!ta||!ta.value){notif('Escreva algo primeiro','err');return;}
+  var txt=ta.value;
+  if(action==='better'){txt=txt.replace(/\bfaz\b/gi,'executa').replace(/\bcoisa\b/gi,'atividade');notif('Texto aprimorado!','ok');}
+  else if(action==='technical'){if(txt.indexOf('conforme')<0)txt=txt.replace(/\.?\s*$/,'. Conforme planejamento orçamentário vigente.');notif('Tom técnico aplicado!','ok');}
+  else if(action==='summarize'){ta.value=smart(txt,180);updateCtr(type);notif('Texto resumido!','ok');return;}
+  ta.value=txt;updateCtr(type);
+}
+
+function openXLSModal(){
+  var orig=(document.getElementById('ta-orig')||{value:''}).value||ST.justOrig||'';
+  var dest=(document.getElementById('ta-dest')||{value:''}).value||ST.justDest||'';
+  var po=document.getElementById('prev-orig');var pd=document.getElementById('prev-dest');
+  if(po)po.textContent=orig;if(pd)pd.textContent=dest;
+  var xd=document.getElementById('xls-data');if(xd&&!xd.value)xd.value=new Date().toISOString().split('T')[0];
+  var xa=document.getElementById('xls-ano');if(xa&&!xa.value)xa.value=new Date().getFullYear();
+  document.getElementById('xls-modal').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeXLSModal(){
+  document.getElementById('xls-modal').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function closeAll(){closeXLSModal();}
+
+function setTipo(tipo){
+  ST.xlsTipo=tipo;
+  document.getElementById('tipo-mso').classList.toggle('active',tipo==='MSO');
+  document.getElementById('tipo-cap').classList.toggle('active',tipo==='CAPEX');
+}
+
+function sv(id,val){var e=document.getElementById(id);if(e)e.value=(val==null?'':val);}
+
+function saveHist(){
+  var orig=(document.getElementById('ta-orig')||{value:''}).value||ST.justOrig;
+  var dest=(document.getElementById('ta-dest')||{value:''}).value||ST.justDest;
+  if(!orig||!dest){notif('Gere as justificativas antes de salvar','err');return;}
+  var h={id:ST.curId||String(Date.now()),title:orig.substring(0,60)+'...',origem:orig,destino:dest,score:ST.score,cat:detectCat(orig+' '+dest),date:new Date().toLocaleDateString('pt-BR'),ts:Date.now(),fav:false};
+  var idx=ST.hist.findIndex(function(x){return x.id===h.id;});
+  if(idx>=0)ST.hist[idx]=h;else ST.hist.unshift(h);
+  persHist();refreshStats();notif('PTR salva!','ok');
+}
+
+function resetAll(){
+  ST.busy=false;ST.step='idle';ST.answers={};ST.origText='';ST.justOrig='';ST.justDest='';ST.curId=null;ST.qList=[];ST.qIdx=0;
+  var pi=document.getElementById('ptr-in');if(pi)pi.value='';
+  var msgs=document.getElementById('msgs');if(msgs)msgs.innerHTML='';
+  var ra=document.getElementById('result-area');if(ra)ra.style.display='none';
+  updateChr();updateScore(0,[],[]);
+  notif('Nova PTR iniciada','info');
+}
+
+function refreshStats(){
+  var total=ST.hist.length;
+  var avg=total?Math.round(ST.hist.reduce(function(s,h){return s+h.score;},0)/total):0;
+  var mins=total*22;
+  var qt=document.getElementById('qs-total');var qa=document.getElementById('qs-avg');
+  var qtime=document.getElementById('qs-time');var qav=document.getElementById('qs-avoid');
+  if(qt)qt.textContent=total;
+  if(qa)qa.textContent=total?avg+'%':'--';
+  if(qtime)qtime.textContent=Math.floor(mins/60)+'h '+(mins%60>0?mins%60+'m':'');
+  if(qav)qav.textContent=Math.round(total*.82);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  loadHist();refreshStats();renderTmpls();
+  var ta=document.getElementById('ptr-in');
+  if(ta)ta.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();analyze();}});
+  addMsg('ai','👋 Olá! Sou o <strong>PTR Copiloto</strong> — assistente para justificativas de PTR no SAP.<br><br>Cole o texto da sua justificativa e clique em <strong>Analisar com IA</strong>, ou use o <strong>📋 Formulário Guiado</strong> para preencher todos os dados e gerar o template XLS completo.');
+  try{var t=localStorage.getItem('ptr_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+});
+
+</script>
+</body>
+</html>
