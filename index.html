@@ -998,6 +998,20 @@ function confirmMissing(key){
     if(exp) exp.remove();
   }
   document.getElementById('miss-update-btn').style.display='block';
+  // Atualizar score em tempo real com os itens ja preenchidos
+  var _combined=(ST.origText?ST.origText+'. ':'')+Object.values(ST_FILL).join('. ');
+  var _anFill=analyzeText(_combined);
+  updateScore(_anFill.score,_anFill.checks,_anFill.missing);
+  // Re-marcar item como filled caso updateScore tenha re-renderizado o painel
+  Object.keys(ST_FILL).forEach(function(k){
+    var _el=document.getElementById('miss-item-'+k);
+    if(_el&&!_el.classList.contains('miss-filled')){
+      _el.classList.add('miss-filled');_el.onclick=null;
+      var _row=_el.querySelector('.miss-item-row');
+      if(_row){var _v=ST_FILL[k]||'';_row.innerHTML='<span style="color:#22c55e;flex-shrink:0;">✓</span><span style="flex:1;color:var(--tx);">'+(ST.missing.find(function(m){return m.key===k;})||{label:k}).label+'</span><span style="color:var(--tx3);font-size:.75rem;font-style:italic;">'+_v.substring(0,24)+(_v.length>24?'…':'')+'</span>';}
+    }
+  });
+  document.getElementById('miss-update-btn').style.display='block';
 }
 function cancelMissing(key){
   const exp=document.getElementById(`miss-exp-${key}`);
