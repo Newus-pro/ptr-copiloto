@@ -1190,7 +1190,14 @@ function updateScore(score,checks,missing){
   if(sub)sub.textContent=score>=90?'Justificativa completa':score>=70?(missing.length+' item(s) podem melhorar'):(missing.length+' item(s) faltando');
   if(alert)alert.style.display=score<90?'block':'none';
   var ck=document.getElementById('chklist');
-  if(ck&&checks)ck.innerHTML=checks.map(function(c){return '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:.78rem;"><span style="color:'+(c.ok?'#22c55e':'#ef4444')+';font-size:.9rem;">'+(c.ok?'✓':'✗')+'</span><span style="'+(c.ok?'':'color:var(--tx3)')+'">'+c.label+'</span></div>';}).join('');
+  if(ck&&checks){
+    var checksArr=Array.isArray(checks)?checks:Object.entries(checks).map(function(e){
+      var key=e[0],val=e[1];
+      var lbl=(typeof CRIT!=='undefined'&&CRIT[key])?CRIT[key].label:key;
+      return {label:lbl,ok:val==='ok'||val===true};
+    });
+    ck.innerHTML=checksArr.map(function(c){return '<div style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:.78rem;"><span style="color:'+(c.ok?'#22c55e':'#ef4444')+';font-size:.9rem;">'+(c.ok?'✓':'✗')+'</span><span style="'+(c.ok?'':'color:var(--tx3)')+'">'+c.label+'</span></div>';}).join('');
+  }
   var mp=document.getElementById('miss-panel');var ml=document.getElementById('miss-list');
   if(mp&&ml){
     if(missing.length){
@@ -1299,10 +1306,4 @@ document.addEventListener('DOMContentLoaded',function(){
   loadHist();refreshStats();renderTmpls();
   var ta=document.getElementById('ptr-in');
   if(ta)ta.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();analyze();}});
-  addMsg('ai','👋 Olá! Sou o <strong>PTR Copiloto</strong> — assistente para justificativas de PTR no SAP.<br><br>Cole o texto da sua justificativa e clique em <strong>Analisar com IA</strong>, ou use o <strong>📋 Formulário Guiado</strong> para preencher todos os dados e gerar o template XLS completo.');
-  try{var t=localStorage.getItem('ptr_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
-});
-
-</script>
-</body>
-</html>
+  addMsg('ai','👋 Olá! Sou o <strong>PTR Copiloto</strong> — assistente para justificativas de PTR no SAP.<br><br>Cole o texto da sua justificativa e clique em <strong>Analisar com IA</strong>, o
